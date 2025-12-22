@@ -1,0 +1,32 @@
+#pragma kernel CSMain
+
+#include "Utility.hlsl"
+
+RWStructuredBuffer<float> Manipulation;
+
+struct Manipulator {
+    float3 position;
+    float radius;
+};
+StructuredBuffer<Manipulator> Manipulators;
+int ManipulatorsCount;
+
+float3 Size;
+float2 StepSize;
+uint2 Resolution;
+
+DEFINE_TO_INDEX(Resolution)
+
+[numthreads(8,8,1)]
+void CSMain(uint3 id : SV_DispatchThreadID) {
+    float height = -1.0;
+    for (int i = 0; i < ManipulatorsCount; i++) {
+        Manipulator manipulator = Manipulators[i];
+        float2 position = StepSize * id.xy;
+        float2 vec = position - manipulator.position.xz;
+        if (dot(vec, vec) < sq(manipulator.radius)) {
+            height = max(height, manipulator.position.y);
+        }
+    }
+    Manipulation[ToIndex(id.xy)] = min(Size.y, height);
+}

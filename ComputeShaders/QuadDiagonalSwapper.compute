@@ -1,0 +1,77 @@
+#pragma kernel CSMain
+#pragma multi_compile_local __ INDEX_UINT32 // otherwise indices are stored as UINT16
+
+#include "Utility.hlsl"
+
+StructuredBuffer<Vertex> VertexBuffer;
+
+RWByteAddressBuffer IndexBuffer;
+
+uint2 Resolution;
+DEFINE_TO_INDEX(Resolution)
+
+/*
+Stores six vertex indices (two triangles) into 'buffer' for a given 'quadID'.
+'a'-'d' are the indices of the four corner points of the quad.
+'connectAD' determines the diagonal that splits the quad into two triangles.
+connectAD  true  false
+            a-b   a-b
+            |\|   |/|
+            c-d   c-d
+(clockwise = front facing)
+*/
+void StoreQuadIndices(RWByteAddressBuffer buffer, uint quadID, uint a, uint b, uint c, uint d, bool connectAD) {
+    #define ONLY_WRITE_CHANGING_INDICES 1
+#if INDEX_UINT32
+    uint offset = 4 * 6 * quadID;
+    #if ONLY_WRITE_CHANGING_INDICES
+    buffer.Store(offset + 0, c);
+    buffer.Store(offset + 4, a);
+    #endif
+    if (connectAD) {
+        buffer.Store(offset + 8, d);
+        buffer.Store(offset + 12, a);
+    }
+    else {
+        buffer.Store(offset + 8, b);
+        buffer.Store(offset + 12, c);
+    }
+    #if ONLY_WRITE_CHANGING_INDICES
+    buffer.Store(offset + 16, b);
+    buffer.Store(offset + 20, d);
+    #endif
+#else // UINT16
+    uint offset = 4 * 3 * quadID;
+    #if ONLY_WRITE_CHANGING_INDICES
+    buffer.Store(offset + 0, a << 16 | c);
+    #endif
+    buffer.Store(offset + 4, connectAD ? (a << 16 | d) : (c << 16 | b));
+    #if ONLY_WRITE_CHANGING_INDICES
+    buffer.Store(offset + 8, d << 16 | b);
+    #endif
+#endif
+    #undef ONLY_WRITE_CHANGING_INDICES
+}
+
+[numthreads(8,8,1)]
+void CSMain(uint3 id : SV_DispatchThreadID) {
+    // Swap the diagonal of all quads (with two triangles each) to minimize the height spanned by the diagonal
+    if (id.x >= Resolution.x - 1 || id.y >= Resolution.y - 1) {
+        return;
+    }
+    // u = up, d = down, l = left, r = right, H = height
+    float ulH = VertexBuffer[ToIndex(id.x + 0, id.y + 0)].position.y;
+    float urH = VertexBuffer[ToIndex(id.x + 1, id.y + 0)].position.y;
+    float dlH = VertexBuffer[ToIndex(id.x + 0, id.y + 1)].position.y;
+    float drH = VertexBuffer[ToIndex(id.x + 1, id.y + 1)].position.y;
+
+    bool connectAD = abs(ulH - drH) > abs(urH - dlH);
+
+    uint ul = id.x + id.y * Resolution.x;
+    uint ur = ul + 1;
+    uint dl = ul + Resolution.x;
+    uint dr = ur + Resolution.x;
+
+    uint quadID = id.x + id.y * (Resolution.x - 1);
+    StoreQuadIndices(IndexBuffer, quadID, dl, dr, ul, ur, connectAD);
+}

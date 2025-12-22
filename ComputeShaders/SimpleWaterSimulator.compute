@@ -1,0 +1,253 @@
+// TODO WIP, not stable
+// TODO velocity is in the wrong y direction (but slope is correct)
+#pragma kernel CSMain
+#pragma kernel Initialize
+
+#include "Utility.hlsl"
+#include "GroundHeight.hlsl"
+
+StructuredBuffer<float4> Source;
+RWStructuredBuffer<float4> Target;
+RWStructuredBuffer<float> Manipulation;
+
+float3 Size;
+float2 StepSize;
+float2 StepSizeInv;
+uint2 Resolution;
+
+float DeltaTime;
+
+float Gravity;
+
+#define dryThreshold 0.0001
+
+DEFINE_TO_INDEX(Resolution)
+
+float2 CalculateGroundSlope(uint2 coord) {
+    uint2 coordPlusOne = min(coord + 1, Resolution - 1);
+    uint2 coordMinusOne = max(int2(coord) - 1, int2(0, 0));
+
+    return StepSizeInv * float2(
+        GetGroundHeight(coordPlusOne.x, coord.y, Size) - GetGroundHeight(coordMinusOne.x, coord.y, Size),
+        GetGroundHeight(coord.x, coordPlusOne.y, Size) - GetGroundHeight(coord.x, coordMinusOne.y, Size)
+    ) / (coordPlusOne - coordMinusOne);
+}
+
+// float3 F(float3 huv, float gravity) {
+//     return huv.x * float3(
+//         huv.y,
+//         sq(huv.y) + 0.5 * gravity * huv.x,
+//         huv.y * huv.z
+//     );
+// }
+// float3 G(float3 huv, float gravity) {
+//     return huv.x * float3(
+//         huv.z,
+//         huv.y * huv.z,
+//         sq(huv.z) + 0.5 * gravity * huv.x
+//     );
+// }
+
+// float3 CalculateRhoX(float3 huvCenter, float3 huvOffset, float gravity) {
+//     float deltaH = huvOffset.x - huvCenter.x;
+//     float2 deltaHUHV = huvOffset.x * huvOffset.yz + huvCenter.x * huvCenter.yz;
+//     float2 uvRho = (sqrt(huvCenter.x) * huvCenter.yz + sqrt(huvCenter.x) * huvOffset.yz) / (sqrt(huvCenter.x) + sqrt(huvOffset.x));
+//     float hRho = 0.5 * (huvCenter.x + huvOffset.x);
+//     float cRho = sqrt(gravity * hRho);
+
+//     float alpha1Rho = ((cRho - uvRho.x) * deltaH + deltaHUHV.x) / (2 * cRho);
+//     float alpha2Rho = ((cRho + uvRho.x) * deltaH - deltaHUHV.x) / (2 * cRho);
+//     float alpha3Rho = deltaHUHV.y - uvRho.y - deltaH;
+//     float lambda1Rho = abs(uvRho.x + cRho);
+//     float lambda2Rho = abs(uvRho.x - cRho);
+//     float lambda3Rho = abs(uvRho.x);
+//     float3 e1Rho = float3(1, uvRho.x + cRho, uvRho.y);
+//     float3 e2Rho = float3(1, uvRho.x - cRho, uvRho.y);
+//     float3 e3Rho = float3(0, 0, 1);
+
+//     return (alpha1Rho * lambda1Rho * e1Rho)
+//         + (alpha2Rho * lambda2Rho * e2Rho)
+//         + (alpha3Rho * lambda3Rho * e3Rho);
+// }
+// 
+// float3 CalculateRhoY(float3 huvCenter, float3 huvOther, float gravity) {
+//     return CalculateRhoX(huvCenter.xzy, huvOther.xzy, gravity).xzy;
+// }
+
+
+float3 U(float3 data) {
+    return float3(
+        data.x,
+        data.y * data.x,
+        data.z * data.x
+    );
+}
+
+float3 F(float3 data) {
+    return float3(
+        data.y * data.x,
+        sq(data.y) * data.x + 0.5 * Gravity * sq(data.x),
+        data.y * data.z * data.x
+    );
+}
+
+float3 FU(float3 u) {
+    if (u.x < 0.001) {
+        return float3(0.0, 0.0, 0.0);
+    }
+    else {
+        return F(float3(u.x, u.y / u.x, u.z / u.x));
+    }
+}
+
+float3 G(float3 data) {
+    return float3(
+        data.z * data.x,
+        data.y * data.z * data.x,
+        sq(data.z) * data.x + 0.5 * Gravity * sq(data.x)
+    );
+}
+
+float3 GU(float3 u) {
+    if (u.x < 0.001) {
+        return float3(0.0, 0.0, 0.0);
+    }
+    else {
+        return G(float3(u.x, u.y / u.x, u.z / u.x));
+    }
+}
+
+[numthreads(8,8,1)]
+void CSMain(uint3 id : SV_DispatchThreadID) {
+    uint2 coordPlusOne = min(id.xy + 1, Resolution - 1);
+    uint2 coordMinusOne = max(int2(id.xy) - 1, int2(0, 0));
+
+    // float2 stepCount = coordPlusOne - coordMinusOne;
+
+    float4 hereData = Source[ToIndex(id.xy)];
+
+    // TODO the directions are not fully correct (had to swap pXData and mXData)
+    float4 pXData = Source[ToIndex(coordMinusOne.x, id.y)];
+    float4 mXData = Source[ToIndex(coordPlusOne.x, id.y)];
+    float4 mYData = Source[ToIndex(id.x, coordMinusOne.y)];
+    float4 pYData = Source[ToIndex(id.x, coordPlusOne.y)];
+
+    float manipulation = Manipulation[ToIndex(id.xy)];
+    if (manipulation >= 0.0) {
+        Target[ToIndex(id.xy)] = float4(manipulation - GetGroundHeight(id.x, id.y, Size), 0.0, 0.0, 0.0);
+        return;
+    }
+    // else {
+    //     Target[ToIndex(id.xy)] = float4(0, 0, 0, 0);
+    //     return;
+    // }
+
+    if (hereData.x > dryThreshold) {
+        float3 mXHalfU = 0.5 * ((U(mXData.xyz) + U(hereData.xyz))
+            - DeltaTime * StepSizeInv.x * -(F(mXData.xyz) - F(hereData.xyz)));
+        float3 pXHalfU = 0.5 * ((U(pXData.xyz) + U(hereData.xyz))
+            - DeltaTime * StepSizeInv.x * (F(pXData.xyz) - F(hereData.xyz)));
+
+        float3 mYHalfU = 0.5 * ((U(mYData.xyz) + U(hereData.xyz))
+            - DeltaTime * StepSizeInv.x * (G(mYData.xyz) - G(hereData.xyz)));
+        float3 pYHalfU = 0.5 * ((U(pYData.xyz) + U(hereData.xyz))
+            - DeltaTime * StepSizeInv.x * -(G(pYData.xyz) - G(hereData.xyz)));
+
+        float2 groundSlope = 0.5 * StepSizeInv * float2(
+            GetGroundHeight(coordMinusOne.x, id.y, Size) - GetGroundHeight(coordPlusOne.x, id.y, Size),
+            GetGroundHeight(id.x, coordMinusOne.y, Size) - GetGroundHeight(id.x, coordPlusOne.y, Size)
+        );
+
+        // // https://www.engineeringtoolbox.com/mannings-roughness-d_799.html
+        float roughnessCoefficient = 0.023;
+        float2 Sf = hereData.yz * sq(roughnessCoefficient) * length(hereData.yz) / pow(hereData.x, 4.0 / 3.0); // friction term
+        float2 S0 = groundSlope;
+        // Sf = float2(0.0, 0.0);
+        // S0 = float2(0.0, 0.0);
+        float3 R = float3(0, Gravity * hereData.x * (S0 - Sf));
+        // R = float3(0,0,0);
+        // R = float3(0, groundSlope * Gravity * hereData.x);
+
+
+        float3 newU = U(hereData.xyz) - DeltaTime * (StepSizeInv.x * (FU(pXHalfU) - FU(mXHalfU))
+            - StepSizeInv.y * (GU(pYHalfU) - GU(mYHalfU)) + R);
+
+        newU.yz *= 0.97;
+        if (newU.x < dryThreshold) {
+            Target[ToIndex(id.xy)] = float4(0.0, 0.0, 0.0, 0.0);
+        }
+        else {
+            Target[ToIndex(id.xy)].x = newU.x;
+            Target[ToIndex(id.xy)].yz = newU.yz / newU.x;
+        }
+    }
+    else {
+        Target[ToIndex(id.xy)] = float4(0.0, 0.0, 0.0, 0.0);
+    }
+    // Target[ToIndex(id.xy)] = Source[ToIndex(id.xy)];
+
+    // float gravity = 9.81;
+    // float DeltaTime = 0.1;
+    // // Manning's roughness coefficient, example values:
+    // // https://www.engineeringtoolbox.com/mannings-roughness-d_799.html
+    // float roughnessCoefficient = 0.023;
+    
+    // uint2 coordPlusOne = min(id.xy + 1, Resolution - 1);
+    // uint2 coordMinusOne = max(int2(id.xy) - 1, int2(0, 0));
+
+    // float3 huvCenter = Source[ToIndex(id.xy)].xyz;
+    // float3 huvLeft = Source[ToIndex(coordMinusOne.x, id.y)].xyz;
+    // float3 huvRight = Source[ToIndex(coordPlusOne.x, id.y)].xyz;
+    // // TODO up down may need to be corrected
+    // float3 huvDown = Source[ToIndex(id.x, coordMinusOne.y)].xyz;
+    // float3 huvUp = Source[ToIndex(id.x, coordPlusOne.y)].xyz;
+
+    // float3 U = float3(huvCenter.x, huvCenter.x * huvCenter.yz);
+
+    // // TODO prevent negative depth (h)
+    // float2 Sf = huvCenter.yz * sq(roughnessCoefficient) * length(huvCenter.yz) / pow(huvCenter.x, 4.0 / 3.0); // friction term
+    // // float2 S0 = CalculateGroundSlope(id.xy); // bed slope
+    // float2 S0 = float2(0.0, 0.0); // bed slope
+    // float3 R = float3(0, gravity * huvCenter.x * (S0 - Sf));
+    
+
+    // // Without F(U) because it cancels out
+    // float3 FRight = 0.5 * (F(huvRight, gravity) - CalculateRhoX(huvCenter, huvRight, gravity));
+    // float3 FLeft = 0.5 * (F(huvLeft, gravity) - CalculateRhoX(huvCenter, huvRight, gravity));
+    
+    // float3 GUp = 0.5 * (G(huvUp, gravity) - CalculateRhoX(huvCenter, huvUp, gravity));
+    // float3 GDown = 0.5 * (G(huvDown, gravity) - CalculateRhoX(huvCenter, huvDown, gravity));
+
+    // float2 deltaXY = StepSize * (coordPlusOne - coordMinusOne);
+    // float3 newU = U - DeltaTime * (deltaXY.x * (FRight - FLeft) + deltaXY.y * (GDown - GUp) + R);
+    // if (newU.x < 0.0001) {
+    //     Target[ToIndex(id.xy)].xyz = float3(0, 0, 0);
+    // }
+    // else {
+    //     Target[ToIndex(id.xy)].x = newU.x;
+    //     float2 velocity = newU.yz / newU.x;
+    //     float maxVelocity = 10;
+    //     // velocity = max(-maxVelocity, min(maxVelocity, velocity));
+    //     Target[ToIndex(id.xy)].yz = velocity;
+    // }
+}
+
+[numthreads(8,8,1)]
+void Initialize(uint3 id : SV_DispatchThreadID) {
+    Manipulation[ToIndex(id.xy)] = -1.0;
+
+    // Target[ToIndex(id.xy)] = float4(0.5 * Size.y, 0.0, 0.0, 0.0);
+    // Target[ToIndex(id.xy)] = float4(0.5 * Size.y * id.x / float(Resolution.x) + 2.0, 0.0, 0.0, 0.0);
+    Target[ToIndex(id.xy)] = float4(3.0, 0.0, 0.0, 0.0);
+
+    uint x = id.x;
+    uint y = id.y;
+    // if (x < Resolution.x / 2) {
+    //     if (y > 16 && y < 48) {
+    //         Target[ToIndex(id.xy)] = float4(6.0, 0.0, 0.0, 0.0);
+    //     }
+    // }
+    if (id.x == Resolution.x / 2 && id.y == Resolution.y / 2) {
+        Target[ToIndex(id.xy)] = float4(6.0, 0.0, 0.0, 0.0);
+    }
+}

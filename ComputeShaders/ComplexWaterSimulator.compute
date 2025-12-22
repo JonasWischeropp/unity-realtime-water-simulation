@@ -1,0 +1,418 @@
+// TODO cleanup and document
+// Reference Paper:
+//     A fast second-order shallow water scheme on two-dimensional
+//     structured grids over abrupt topograhy
+//     Buttinger-Kreuzhuber, Horváth, Noelle, Blöschl, Waser
+
+// Reference for Manning's n
+//     https://www.fsl.orst.edu/geowater/FX3/help/8_Hydraulic_Reference/Mannings_n_Tables.html
+
+#pragma kernel CSMain
+#pragma kernel CalculateVs;
+
+#include "Utility.hlsl"
+
+struct CellData {
+    float2 uvL, uvR, uvD, uvU;
+    float1 hL, hR, hD, hU;
+    float1 wL, wR, wD, wU;
+    float1 bL, bR, bD, bU;
+};
+
+Texture2D<float> GroundHeight;
+StructuredBuffer<float> Manipulation;
+
+RWStructuredBuffer<float4> Source;
+RWStructuredBuffer<float4> Target;
+
+RWStructuredBuffer<CellData> Cells;
+
+uint2 Resolution;
+float2 StepSize;
+float3 Size;
+
+float DeltaTime;
+
+float Gravity;
+float EpsilonDry;
+float ManningRoughness;
+float MaxVelocity;
+
+float FoamSpawn;
+float FoamDissipation;
+float FoamAirTrapMul;
+float FoamSteepMul;
+float FoamVanishing;
+
+DEFINE_TO_INDEX(Resolution)
+
+#define MINMOD_COMP(p) \
+if (sum.p == 3) \
+    result.p = min(a.p, min(b.p, c.p)); \
+else if (sum.p == -3) \
+    result.p = max(a.p, max(b.p, c.p)); \
+else \
+    result.p = 0.0;
+
+float minmod(float a, float b, float c) {
+    int signA = sign(a);
+    int signB = sign(b);
+    int signC = sign(c);
+    int sum = signA + signB + signC;
+    float result;
+    MINMOD_COMP(x)
+    return result;
+}
+float4 minmod(float4 a, float4 b, float4 c) {
+    int4 signA = sign(a);
+    int4 signB = sign(b);
+    int4 signC = sign(c);
+    int4 sum = signA + signB + signC;
+    float4 result;
+    MINMOD_COMP(x)
+    MINMOD_COMP(y)
+    MINMOD_COMP(z)
+    MINMOD_COMP(w)
+    return result;
+}
+
+
+float bilinearInterpolate(float bl, float br, float tl, float tr, float2 weights) {
+    float2 xInterpolate = lerp(
+        float2(tl, bl),
+        float2(tr, br), weights.x);
+    float yInterpolate = lerp(xInterpolate.y, xInterpolate.x, weights.y);
+    return yInterpolate;
+}
+
+float ClampFoam(float x, float minX, float maxX) {
+    return (min(x, maxX) - min(x, minX)) / (maxX - minX);
+}
+
+float GetGroundLevel(uint x, uint y) {
+#if UNITY_REVERSED_Z
+    return GroundHeight[uint2(x,y)].x *  Size.y;
+#else
+    return (1.0 - GroundHeight[uint2(x,y)].x) *  Size.y;
+#endif
+}
+
+float4 V(uint x, uint y, out float foam) {
+    uint idx = ToIndex(x, y);
+
+    // float4 v = Source[idx];
+    // v.w += v.x; // w = h + b
+    // return v;
+    foam = Source[idx].w;
+    return float4(
+        Source[idx].xyz, // h, u, v
+        Source[idx].x + GetGroundLevel(x, y) // w = h + b
+    );
+}
+
+[numthreads(8,8,1)]
+void CalculateVs (uint3 id : SV_DispatchThreadID) { // TODO naming could be improved
+    uint2 idPlusOne = min(id.xy + 1, Resolution - 1);
+    uint2 idMinusOne = max(int2(id.xy) - 1, int2(0, 0));
+
+    uint idx = ToIndex(id.x, id.y);
+    CellData data;
+
+    float foam_H, foam_L, foam_R, foam_D, foam_U;
+    float4 V_H = V(id.x, id.y, foam_H);
+    float4 V_L = V(idMinusOne.x, id.y, foam_L);
+    float4 V_R = V(idPlusOne.x, id.y, foam_R);
+    float4 V_D = V(id.x, idMinusOne.y, foam_D);
+    float4 V_U = V(id.x, idPlusOne.x, foam_U);
+    // TODO adjust stepsize at border to be only half
+
+    const float theta = 1.3;
+    float4 DV_x = minmod(
+        theta * (V_H - V_L),
+        0.5 * (V_R - V_L),
+        theta * (V_R - V_H)
+    ) / StepSize.x; // eq. 12
+    float4 DV_y = minmod( // TODO refactor
+        theta * (V_H - V_D),
+        0.5 * (V_U - V_D),
+        theta * (V_U - V_H)
+    ) / StepSize.y; // eq. 12
+    
+    float4 DV_x_s = 0.5 * StepSize.x * DV_x;
+    float4 DV_y_s = 0.5 * StepSize.y * DV_y;
+
+    float2 hw_L = V_H.xw - DV_x_s.xw; // eq. 14-15
+    float2 hw_R = V_H.xw + DV_x_s.xw; // eq. 14-15
+    float2 hw_D = V_H.xw - DV_y_s.xw; // eq. 14-15
+    float2 hw_U = V_H.xw + DV_y_s.xw; // eq. 14-15
+    data.hL = hw_L.x;
+    data.hR = hw_R.x;
+    data.hD = hw_D.x;
+    data.hU = hw_U.x;
+    
+    // TODO check if "if" is right (page 4 left bottom/ right top)
+    if (V_H.x < EpsilonDry) {
+        data.uvL = float2(0.0, 0.0);
+        data.uvR = float2(0.0, 0.0);
+        data.uvD = float2(0.0, 0.0);
+        data.uvU = float2(0.0, 0.0);
+    }
+    else {
+        data.uvL = V_H.yz - (hw_R.x / V_H.x) * DV_x_s.yz; // eq. 18
+        data.uvR = V_H.yz + (hw_L.x / V_H.x) * DV_x_s.yz; // eq. 18
+        data.uvD = V_H.yz - (hw_U.x / V_H.x) * DV_y_s.yz; // eq. 19
+        data.uvU = V_H.yz + (hw_D.x / V_H.x) * DV_y_s.yz; // eq. 19
+    }
+    // data.uvL = hw_L.x < EpsilonDry ? float2(0.0, 0.0)
+    //     : V_H.yz - (hw_L.x / V_H.x) * DV_x_s.yz; // eq. 18
+    // data.uvR = hw_R.x < EpsilonDry ? float2(0.0, 0.0)
+    //     : V_H.yz + (hw_R.x / V_H.x) * DV_x_s.yz; // eq. 18
+    // data.uvD = hw_D.x < EpsilonDry ? float2(0.0, 0.0)
+    //     : V_H.yz - (hw_D.x / V_H.x) * DV_y_s.yz; // eq. 19
+    // data.uvU = hw_U.x < EpsilonDry ? float2(0.0, 0.0)
+    //     : V_H.yz + (hw_U.x / V_H.x) * DV_y_s.yz; // eq. 19
+    
+    float b_L = hw_L.y - hw_L.x; // eq. 20
+    float b_R = hw_R.y - hw_R.x; // eq. 20
+    float b_D = hw_D.y - hw_D.x; // eq. 20
+    float b_U = hw_U.y - hw_U.x; // eq. 20
+    data.bL = b_L;
+    data.bR = b_R;
+    data.bD = b_D;
+    data.bU = b_U;
+    float b_H = 0.25 * (b_L + b_R + b_D + b_U);
+    
+    // consider partially wet cells
+    if (b_L > V_L.w || b_R > V_R.w) { // eq. 23
+        float Db_x = minmod( // TODO could be precomputed
+            theta * (b_H - b_L),
+            0.5 * (b_R - b_L),
+            theta * (b_R - b_H)
+        ) / StepSize.x; // eq. 24
+        if (abs(DV_x.w) > abs(Db_x)) { // eq. 25
+            DV_x.w = DV_x.x + Db_x; // eq. 26
+            DV_x_s.w = 0.5 * StepSize.x * DV_x.w;
+            hw_L.y = V_H.w - DV_x_s.w; // eq. 15
+            hw_R.y = V_H.w + DV_x_s.w; // eq. 15
+        }
+    }
+    if (b_D > V_D.w || b_U > V_U.w) { // eq. 23 modified
+        float Db_y = minmod(
+            theta * (b_H - b_D),
+            0.5 * (b_U - b_D),
+            theta * (b_U - b_H)
+        ) / StepSize.y; // eq. 24 modified
+        if (abs(DV_y.w) > abs(Db_y)) { // eq. 25 modified
+            DV_y.w = DV_y.x + Db_y; // eq. 26 modified
+            DV_y_s.w = 0.5 * StepSize.y * DV_y.w;
+            hw_D.y = V_H.w - DV_y_s.w; // eq. 15
+            hw_U.y = V_H.w + DV_y_s.w; // eq. 15
+        }
+    }
+    data.wL = hw_L.y;
+    data.wR = hw_R.y;
+    data.wD = hw_D.y;
+    data.wU = hw_U.y;
+    
+    Cells[idx] = data;
+    
+    // Calculate foam
+    if (V_H.x > 0.0) {
+        // Move foam
+        float2 origin = float2(id.x, id.y) - V_H.yz / Size.xz * float2(Resolution) * DeltaTime;
+        float2 weights = frac(origin);
+        uint2 originCoord = uint2(origin);
+
+        uint2 originCoordPlusOne = min(originCoord.xy + 1, Resolution - 1); // TODO refactor this calculation
+
+        uint idx_LD = ToIndex(originCoord.x, originCoord.y);
+        uint idx_RD = ToIndex(originCoordPlusOne.x, originCoord.y);
+        uint idx_LU = ToIndex(originCoord.x, originCoordPlusOne.y);
+        uint idx_RU = ToIndex(originCoordPlusOne.x, originCoordPlusOne.y);
+        float movedFoam = bilinearInterpolate(Source[idx_LD].w, Source[idx_RD].w, Source[idx_LU].w, Source[idx_RU].w, weights);
+        
+
+        // float airTrapFoam = ClampFoam(length(float2(DV_x.y, DV_y.z)), FOAM_MIN, FOAM_MAX) * FOAM_SCALE;
+        // float steepFoam = ClampFoam(length(float2(DV_x.w, DV_y.w)), FOAM_MIN, FOAM_MAX) * FOAM_SCALE;
+        float airTrapFoam = FoamAirTrapMul * length(float2(DV_x.y, DV_y.z));
+        float steepFoam = FoamSteepMul * length(float2(DV_x.w, DV_y.w));
+
+        float newFoam = movedFoam + airTrapFoam + steepFoam;
+        newFoam += FoamDissipation * (foam_L + foam_R + foam_D + foam_U - 4.0 * newFoam);
+        newFoam -= FoamVanishing * newFoam * DeltaTime;
+        Target[idx].w = max(0.0, min(10, newFoam));
+        // TODO add * DeltaTime where missing
+    }
+}
+
+// TODO h, uv could be passed with float and float2
+
+// Expects W = (h, u, v)
+float3 F(float3 W) {
+    float h = W.x;
+    float2 uv = W.yz;
+    return float3(
+        h * uv.x,
+        h * sq(uv.x) + 0.5 * Gravity * sq(h),
+        h * uv.x * uv.y
+    ); // eq. 1-2
+}
+// Expects W = (h, u, v)
+float3 G(float3 W) {
+    float h = W.x;
+    float2 uv = W.yz;
+    return float3(
+        h * uv.y,
+        h * uv.x * uv.y,
+        h * sq(uv.y) + 0.5 * Gravity * sq(h)
+    ); // eq. 1-2
+}
+
+void CalculateSigmas(float h_M, float u_M, float h_P, float u_P,
+    out float sigma_M, out float sigma_P
+) {
+    float2 gh_root = sqrt(Gravity * float2(h_M, h_P));
+    sigma_M = min(min(u_M - gh_root.x, u_P - gh_root.y), 0.0); // eq. 43
+    sigma_P = max(max(u_M + gh_root.x, u_P + gh_root.y), 0.0); // eq. 42
+}
+
+// Expects W = (h, u, v)
+float3 F_HLL(float3 W_M, float3 W_P) {
+    float sigma_M, sigma_P;
+    CalculateSigmas(W_M.x, W_M.y, W_P.x, W_P.y, sigma_M, sigma_P);
+    if (sigma_M == sigma_P) {
+        return float3(0.0, 0.0, 0.0);
+    }
+    else {
+        float3 U_M = float3(W_M.x, W_M.yz * W_M.x);
+        float3 U_P = float3(W_P.x, W_P.yz * W_P.x);
+        return (
+            (sigma_P * F(W_M) - sigma_M * F(W_P))
+            + ((sigma_P * sigma_M) * (U_P - U_M))
+        ) / (sigma_P - sigma_M); // eq. 41
+    }
+}
+// Expects W = (h, u, v)
+float3 G_HLL(float3 W_M, float3 W_P) {
+    float sigma_M, sigma_P;
+    CalculateSigmas(W_M.x, W_M.z, W_P.x, W_P.z, sigma_M, sigma_P);
+    if (sigma_M == sigma_P) {
+        return float3(0.0, 0.0, 0.0);
+    }
+    else {
+        float3 U_M = float3(W_M.x, W_M.yz * W_M.x);
+        float3 U_P = float3(W_P.x, W_P.yz * W_P.x);
+        return (
+            (sigma_P * G(W_M) - sigma_M * G(W_P))
+            + ((sigma_P * sigma_M) * (U_P - U_M))
+        ) / (sigma_P - sigma_M); // eq. 41 modified
+    }
+}
+
+float3 R(uint2 coord) {
+    uint2 coordPlusOne = min(coord.xy + 1, Resolution - 1);
+    uint2 coordMinusOne = max(int2(coord.xy) - 1, int2(0, 0));
+
+    CellData cell_H = Cells[ToIndex(coord.x, coord.y)];
+    CellData cell_L = Cells[ToIndex(coordMinusOne.x, coord.y)];
+    CellData cell_R = Cells[ToIndex(coordPlusOne.x, coord.y)];
+    CellData cell_D = Cells[ToIndex(coord.x, coordMinusOne.y)];
+    CellData cell_U = Cells[ToIndex(coord.x, coordPlusOne.y)];
+
+    // calucate bCN_s in all directions with eq. 21, 27 modified
+    float bCN_s_L = min(max(cell_H.bL, cell_L.bR), min(cell_H.wL, cell_L.wR));
+    float bCN_s_R = min(max(cell_H.bR, cell_R.bL), min(cell_H.wR, cell_R.wL));
+    float bCN_s_D = min(max(cell_H.bD, cell_D.bU), min(cell_H.wD, cell_D.wU));
+    float bCN_s_U = min(max(cell_H.bU, cell_U.bD), min(cell_H.wU, cell_U.wD));
+    
+    // calculate hCN_s in all directions with eq. 28 modified
+    float h_s_LP = min(cell_H.wL - bCN_s_L, cell_H.hL);
+    float h_s_LM = min(cell_L.wR - bCN_s_L, cell_L.hR);
+    float h_s_RP = min(cell_R.wL - bCN_s_R, cell_R.hL);
+    float h_s_RM = min(cell_H.wR - bCN_s_R, cell_H.wR);
+
+    float h_s_DP = min(cell_H.wD - bCN_s_D, cell_H.hD);
+    float h_s_DM = min(cell_D.wU - bCN_s_D, cell_D.hU);
+    float h_s_UP = min(cell_U.wD - bCN_s_U, cell_U.hD);
+    float h_s_UM = min(cell_H.wU - bCN_s_U, cell_H.wU);
+    
+    // construct W_s (using W_s = (h, u, v) instead of U_s = (h, hu, hv))
+    float3 W_s_LP = float3(h_s_LP, cell_H.uvL);
+    float3 W_s_LM = float3(h_s_LM, cell_L.uvR);
+    float3 W_s_RP = float3(h_s_RP, cell_R.uvL);
+    float3 W_s_RM = float3(h_s_RM, cell_H.uvR);
+
+    float3 W_s_DP = float3(h_s_DP, cell_H.uvD);
+    float3 W_s_DM = float3(h_s_DM, cell_D.uvU);
+    float3 W_s_UP = float3(h_s_UP, cell_U.uvD);
+    float3 W_s_UM = float3(h_s_UM, cell_H.uvU);
+    
+    // evaluate flux functions
+    float3 F_R = F_HLL(W_s_RM, W_s_RP);
+    float3 F_L = F_HLL(W_s_LM, W_s_LP);
+    float3 G_U = G_HLL(W_s_UM, W_s_UP);
+    float3 G_D = G_HLL(W_s_DM, W_s_DP);
+    
+    // compute source term
+    float h_H = 0.25 * (h_s_LP + h_s_RM + h_s_DP + h_s_UM);
+    float b_H = 0.25 * (bCN_s_L + bCN_s_R + bCN_s_D + bCN_s_U);
+
+    float4 S_LRDU = - Gravity / StepSize.xxyy * 0.5 * (h_H
+        + float4(h_s_LP, h_s_RM, h_s_DP, h_s_UM))
+        * float4(b_H - bCN_s_L, bCN_s_R - b_H, b_H - bCN_s_D, bCN_s_U - b_H); // eq. 38 modified
+    float3 S_H = float3(0, S_LRDU.x + S_LRDU.y, S_LRDU.z + S_LRDU.w); // eq. 36, 37
+
+    return S_H - (F_R - F_L) / StepSize.x - (G_U - G_D) / StepSize.y; // eq. 46
+}
+
+// Expects W = (h, u, v)
+float3 Sf_p(float3 W) {
+    float h = W.x;
+    if (h <= EpsilonDry) {
+        return float3(0.0, 0.0, 0.0);
+    }
+    else {
+        float2 uv = W.yz;
+        float n = ManningRoughness;
+        float l = length(uv);
+        return - Gravity * sq(n) * pow(abs(h), - 4.0 / 3.0) * float3(0.0, l, l); // eq. 76
+    }
+}
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID) {
+
+    float manipulation = Manipulation[ToIndex(id.xy)];
+    if (manipulation >= 0.0) {
+        Target[ToIndex(id.xy)] = float4(manipulation - GetGroundLevel(id.x, id.y), 0.0, 0.0, 0.0);
+        return;
+    }
+
+    uint2 coord = id.xy;
+    uint idx = ToIndex(coord.x, coord.y);
+    // TODO fix border condition
+    // Dont Simulate border
+    // if (id.x >= Resolution.x - 1 || id.x < 1 || id.y >= Resolution.y - 1 || id.y < 1) {
+    //     Target[idx] = Source[idx]; // TODO can be removed
+    //     return;
+    // }
+
+    float3 U = Source[idx].xyz;
+    U.yz *= U.x; // (h, u, v) -> (h, hu, hv)
+    // float3 U_s_new = U + DeltaTime * R(coord); // eq. 45
+    float3 U_s_new = (U + DeltaTime * R(coord)) / (1.0 - DeltaTime * Sf_p(Source[idx].xyz)); // eq. 77
+    if (U_s_new.x <= 0.0) {
+        Target[idx].xyzw = float4(0.0, 0.0, 0.0, 0.0);
+    }
+    else {
+        Target[idx].xyz = float3(U_s_new.x, U_s_new.yz / U_s_new.x); // (h, hu, hv) -> (h, u, v)
+        float len = length(Target[idx].yz);
+        if (len > MaxVelocity)
+            Target[idx].xyz *= MaxVelocity / len; // TODO when depth is not modified its unstable but this is probably not right
+    }
+
+    // TODO make second order
+    // float3 U_s_new = (U + DeltaTime * R(U)) / (1.0 - DeltaTime * Sf_p(W)); // eq. 77
+    // float3 U_new = 0.5 * (U + U_s_new + detalT * R(U_s_new))
+    //     / (1.0 - 0.5 * DeltaTime * Sf_p(W_s_new)); // eq. 78
+}

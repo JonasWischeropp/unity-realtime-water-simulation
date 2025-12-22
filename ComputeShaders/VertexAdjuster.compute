@@ -1,0 +1,37 @@
+#pragma kernel AdjustPosition
+#pragma kernel AdjustNormals
+
+#include "Utility.hlsl"
+#include "GroundHeight.hlsl"
+
+#define ZFIGHT_OFFSET 0.0001
+
+RWStructuredBuffer<Vertex> VertexBuffer;
+
+StructuredBuffer<float4> Data;
+
+float3 Size;
+uint2 Resolution;
+float2 StepSize;
+float2 StepSizeInv;
+
+DEFINE_TO_INDEX(Resolution)
+
+[numthreads(8,8,1)]
+void AdjustPosition(uint3 id : SV_DispatchThreadID) {
+    float depth = Data[ToIndex(id.xy)].x;
+    VertexBuffer[ToIndex(id.xy)].position.y = depth + GetGroundHeight(id.x, id.y, Size) - 0.5 * Size.y + ZFIGHT_OFFSET;
+}
+
+[numthreads(8,8,1)]
+void AdjustNormals(uint3 id : SV_DispatchThreadID) {
+    uint2 coordPlusOne = min(id.xy + 1, Resolution - 1);
+    uint2 coordMinusOne = max(int2(id.xy) - 1, int2(0, 0));
+    float2 delta = StepSize * (coordPlusOne - coordMinusOne);
+
+    float3 vecX = float3(delta.x, VertexBuffer[ToIndex(coordPlusOne.x, id.y)].position.y - VertexBuffer[ToIndex(coordMinusOne.x, id.y)].position.y, 0.0);
+    float3 vecZ = float3(0.0, VertexBuffer[ToIndex(id.x, coordPlusOne.y)].position.y - VertexBuffer[ToIndex(id.x, coordMinusOne.y)].position.y, delta.y);
+    float3 normal = normalize(cross(vecZ, vecX));
+
+    VertexBuffer[ToIndex(id.xy)].normal = normal;
+}
