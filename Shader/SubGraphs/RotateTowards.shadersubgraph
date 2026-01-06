@@ -120,7 +120,7 @@
     },
     "m_Path": "Sub Graphs",
     "m_GraphPrecision": 1,
-    "m_PreviewMode": 2,
+    "m_PreviewMode": 1,
     "m_OutputNode": {
         "m_Id": "7543f123f2dd48cda05eed8fec11a472"
     },
