@@ -1,2 +1,20 @@
 fileFormatVersion: 2
 guid: d950caf5f7a62704aab4ff3083bc27bb
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - _groundDepthCamera: {instanceID: 0}
+  - _cameraHolder: {instanceID: 0}
+  - _meshRenderer: {instanceID: 0}
+  - _meshFilter: {instanceID: 0}
+  - _simulationComputeShader: {fileID: 7200000, guid: 535c718a7cd4efdb7b1992231607f4c2, type: 3}
+  - _complexSimulationComputeShader: {fileID: 7200000, guid: 1707f7f68f8c05c77838f55c4fbf200f, type: 3}
+  - _manipulationBakeShader: {fileID: 7200000, guid: d1e0732df07fb52618735176a14bcfea, type: 3}
+  - _swapComputeShader: {fileID: 7200000, guid: 5f31d75ba974ee3d1b1259501175cb59, type: 3}
+  - _setToGroundComputeShader: {fileID: 7200000, guid: d619b6724a9065600ac09f3e25bb355a, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
