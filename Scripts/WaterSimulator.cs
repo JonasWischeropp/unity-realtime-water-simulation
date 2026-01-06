@@ -348,31 +348,6 @@ public class WaterSimulator : MonoBehaviour {
         _groundDepthCamera.farClipPlane = _size.y;
     }
     
-    [SerializeField]
-    bool _indexFormat32 = true;
-
-    Mesh CreateMesh() {
-        Mesh mesh = new Mesh();
-        mesh.vertices = new Vector3[] {
-            new Vector3(0,0,0),
-            new Vector3(1,0,0),
-            new Vector3(0,0,1),
-            new Vector3(1,0,1),
-            new Vector3(0,-1,0),
-        };
-        if (_indexFormat32) {
-            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-            _quadDiagonalSwapperShader.EnableKeyword("INDEX_UINT32");
-        }
-        else {
-            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt16;
-            _quadDiagonalSwapperShader.DisableKeyword("INDEX_UINT32");
-        }
-        mesh.triangles = new int[] {0, 2, 1, 1, 2, 3};
-        // mesh.triangles = new int[] {4,4,4,4,4,4};
-        return mesh;
-    }
-    
     public static Mesh CreateMesh(Vector2Int resolution, Vector3 scale) {
         Mesh mesh = new Mesh();
         Vector3[] vertices = new Vector3[resolution.x * resolution.y];
