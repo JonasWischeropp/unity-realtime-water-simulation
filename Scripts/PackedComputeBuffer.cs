@@ -1,11 +1,9 @@
 // TODO clean up
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using NUnit.Framework;
 using UnityEngine;
 
-public class PackedComputeBuffer<Key, Value> where Value : notnull {
+public class PackedComputeBuffer<Key, Value> : IDisposable where Value : notnull {
     Dictionary<Key, int> _keyToIndex = new Dictionary<Key, int>();
     Key[] _indexToKey;
     Value[] _data;
@@ -124,6 +122,14 @@ public class PackedComputeBuffer<Key, Value> where Value : notnull {
     }
 
     public void Release() {
+        Buffer.Release();
+    }
+
+    public void Dispose() {
+        Buffer.Release();
+    }
+
+    ~PackedComputeBuffer() {
         Buffer.Release();
     }
 
