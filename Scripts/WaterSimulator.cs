@@ -28,7 +28,7 @@ public class WaterSimulator : MonoBehaviour {
     public const int KERNEL_SIZE = 8;
 
     [SerializeField, Step(KERNEL_SIZE, 2)]
-    Vector2Int _resolution = Vector2Int.one * 256;
+    Vector2Int _resolution = Vector2Int.one * 64;
     [SerializeField]
     LayerMask _groundLayer = ~0;
     [SerializeField]
@@ -64,13 +64,13 @@ public class WaterSimulator : MonoBehaviour {
     [SerializeField]
     ComputeShader _complexSimulationComputeShader;
 
-    [SerializeField] ComputeShader _manipulationBakeShader;
+    [SerializeField] ComputeShader _manipulatorBakerShader;
     ComputeBuffer _manipulationBuffer;
     PackedComputeBuffer<WaterManipulator, Vector4> _manipulators;
 
     [SerializeField]
-    ComputeShader _swapComputeShader;
-    [SerializeField] ComputeShader _setToGroundComputeShader;
+    ComputeShader _quadDiagonalSwapperShader;
+    [SerializeField] ComputeShader _vertexAdjusterShader;
 
     [SerializeField] bool _swap = true;
     [SerializeField] bool _step = false;
@@ -80,7 +80,7 @@ public class WaterSimulator : MonoBehaviour {
 
     IWaterSimulator _waterSimulator;
     [SerializeField]
-    bool _useSimple = true;
+    bool _useSimple = false;
 
     void Update() {
         if (_step) {
@@ -118,7 +118,7 @@ public class WaterSimulator : MonoBehaviour {
     }
 
     void InitVertexAdjuster() {
-        ComputeShader shader = _setToGroundComputeShader;
+        ComputeShader shader = _vertexAdjusterShader;
         Debug.Assert((_meshFilter.mesh.vertexBufferTarget | GraphicsBuffer.Target.Structured) != 0);
         GraphicsBuffer vertexBuffer = _meshFilter.mesh.GetVertexBuffer(0);
         shader.SetBuffer(0, ShaderIDs.VertexBuffer, vertexBuffer);
@@ -135,12 +135,13 @@ public class WaterSimulator : MonoBehaviour {
     }
 
     void DispatchVertexAdjuster() {
-        _setToGroundComputeShader.SetBuffer(0, ShaderIDs.Data, _waterSimulator.GetSimulationData());
-        _setToGroundComputeShader.SetBuffer(1, ShaderIDs.Data, _waterSimulator.GetSimulationData());
+        ComputeShader shader = _vertexAdjusterShader;
+        shader.SetBuffer(0, ShaderIDs.Data, _waterSimulator.GetSimulationData());
+        shader.SetBuffer(1, ShaderIDs.Data, _waterSimulator.GetSimulationData());
 
-        _setToGroundComputeShader.Dispatch(0, _resolution.x / KERNEL_SIZE, _resolution.y / KERNEL_SIZE, 1);
+        shader.Dispatch(0, _resolution.x / KERNEL_SIZE, _resolution.y / KERNEL_SIZE, 1);
 
-        _setToGroundComputeShader.Dispatch(1, _resolution.x / KERNEL_SIZE, _resolution.y / KERNEL_SIZE, 1);
+        shader.Dispatch(1, _resolution.x / KERNEL_SIZE, _resolution.y / KERNEL_SIZE, 1);
     }
 
     void SetShaderSimSize(ComputeShader shader) {
@@ -163,7 +164,7 @@ public class WaterSimulator : MonoBehaviour {
     }
 
     void InitQuadDiagonalSwapper() {
-        ComputeShader shader = _swapComputeShader;
+        ComputeShader shader = _quadDiagonalSwapperShader;
         if (_meshFilter.mesh.indexFormat == UnityEngine.Rendering.IndexFormat.UInt32) {
             shader.EnableKeyword("INDEX_UINT32");
         }
@@ -184,7 +185,7 @@ public class WaterSimulator : MonoBehaviour {
     }
 
     void DispatchQuadDiagonalSwapper() {
-        _swapComputeShader.Dispatch(0,
+        _quadDiagonalSwapperShader.Dispatch(0,
             (_resolution.x - 1 + KERNEL_SIZE - 1) / KERNEL_SIZE,
             (_resolution.y - 1 + KERNEL_SIZE - 1) / KERNEL_SIZE,
             1
@@ -192,14 +193,14 @@ public class WaterSimulator : MonoBehaviour {
     }
 
     void InitManipulatorBaker() {
-        ComputeShader shader = _manipulationBakeShader;
+        ComputeShader shader = _manipulatorBakerShader;
         SetShaderSimResolution(shader);
         SetShaderSimSize(shader);
         SetShaderSimStepSize(shader);
     }
 
     void DispatchManipulatorBaker() {
-        ComputeShader shader = _manipulationBakeShader;
+        ComputeShader shader = _manipulatorBakerShader;
 
         shader.SetInt(ShaderIDs.ManipulatorsCount, _manipulators.Count);
         shader.SetBuffer(0, ShaderIDs.Manipulators, _manipulators.Buffer);
@@ -361,11 +362,11 @@ public class WaterSimulator : MonoBehaviour {
         };
         if (_indexFormat32) {
             mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-            _swapComputeShader.EnableKeyword("INDEX_UINT32");
+            _quadDiagonalSwapperShader.EnableKeyword("INDEX_UINT32");
         }
         else {
             mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt16;
-            _swapComputeShader.DisableKeyword("INDEX_UINT32");
+            _quadDiagonalSwapperShader.DisableKeyword("INDEX_UINT32");
         }
         mesh.triangles = new int[] {0, 2, 1, 1, 2, 3};
         // mesh.triangles = new int[] {4,4,4,4,4,4};
