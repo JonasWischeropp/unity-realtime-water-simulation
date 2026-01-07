@@ -1,7 +1,11 @@
 // TODO refactor code
 using System.Collections;
 using System.Linq;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
+
 using URPCameraData = UnityEngine.Rendering.Universal.UniversalAdditionalCameraData;
 
 [AddComponentMenu("WaterSimulation/Water Simulator"),
@@ -30,7 +34,7 @@ public class WaterSimulator : MonoBehaviour {
     [SerializeField, Step(KERNEL_SIZE, 2)]
     Vector2Int _resolution = Vector2Int.one * 64;
     [SerializeField]
-    LayerMask _groundLayer = ~0;
+    LayerMask _groundLayer = 1; // Default
     [SerializeField]
     Vector3 _size = Vector3.one * 10f;
     
@@ -242,6 +246,12 @@ public class WaterSimulator : MonoBehaviour {
             enabled = false;
             return;
         }
+#if UNITY_EDITOR
+        if ((gameObject.layer & _groundLayer) != 0) {
+            Debug.LogError($"The layer of the simulator ({LayerMask.LayerToName(gameObject.layer)}) should not be included in the LayerMask \"{ObjectNames.NicifyVariableName(nameof(_groundLayer))}\"");
+        }
+#endif
+
         _meshRenderer = GetComponent<MeshRenderer>();
         _meshRenderer.bounds = new Bounds(transform.position, _size);
 
