@@ -333,6 +333,7 @@ public class WaterSimulator : MonoBehaviour {
         CalibrateCamera();
 
         var cameraData = _cameraHolder.GetComponent<URPCameraData>();
+        // TODO what if HDRP or build-in is used?
         cameraData.renderPostProcessing = false;
         cameraData.renderShadows = false;
         // cameraData.SetRenderer(_depthRendererIndex);
