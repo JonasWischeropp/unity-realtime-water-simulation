@@ -123,7 +123,7 @@ void CalculateVs (uint3 id : SV_DispatchThreadID) { // TODO naming could be impr
     float4 V_L = V(idMinusOne.x, id.y, foam_L);
     float4 V_R = V(idPlusOne.x, id.y, foam_R);
     float4 V_D = V(id.x, idMinusOne.y, foam_D);
-    float4 V_U = V(id.x, idPlusOne.x, foam_U);
+    float4 V_U = V(id.x, idPlusOne.y, foam_U);
     // TODO adjust stepsize at border to be only half
 
     const float theta = 1.3;
