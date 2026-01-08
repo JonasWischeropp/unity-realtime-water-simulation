@@ -9,6 +9,7 @@
 
 #pragma kernel CSMain
 #pragma kernel CalculateVs;
+#pragma kernel Init;
 
 #include "Utility.hlsl"
 
@@ -20,7 +21,7 @@ struct CellData {
 };
 
 Texture2D<float> GroundHeight;
-StructuredBuffer<float> Manipulation;
+RWStructuredBuffer<float> Manipulation;
 
 RWStructuredBuffer<float4> Source;
 RWStructuredBuffer<float4> Target;
@@ -38,7 +39,6 @@ float EpsilonDry;
 float ManningRoughness;
 float MaxVelocity;
 
-float FoamSpawn;
 float FoamDissipation;
 float FoamAirTrapMul;
 float FoamSteepMul;
@@ -415,4 +415,10 @@ void CSMain (uint3 id : SV_DispatchThreadID) {
     // float3 U_s_new = (U + DeltaTime * R(U)) / (1.0 - DeltaTime * Sf_p(W)); // eq. 77
     // float3 U_new = 0.5 * (U + U_s_new + detalT * R(U_s_new))
     //     / (1.0 - 0.5 * DeltaTime * Sf_p(W_s_new)); // eq. 78
+}
+
+[numthreads(8,8,1)]
+void Init(uint3 id : SV_DispatchThreadID) {
+    Manipulation[ToIndex(id.xy)] = -1.0;
+    Target[ToIndex(id.xy)] = float4(3.0, 0.0, 0.0, 0.0);
 }

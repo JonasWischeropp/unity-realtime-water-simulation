@@ -22,10 +22,12 @@ public class ComplexWaterSimulator : IWaterSimulator {
 
         _cellDataBuffer = new ComputeBuffer(bufferSize, 5 * 4 * 4);
 
-        for (int kernel = 0; kernel < 2; kernel++) {
+        for (int kernel = 0; kernel < 3; kernel++) {
             _simulationComputeShader.SetBuffer(kernel, "Manipulation", manipulationBuffer);
             _simulationComputeShader.SetTexture(kernel, "GroundHeight", groundDepthTexture);
             _simulationComputeShader.SetBuffer(kernel, "Cells", _cellDataBuffer);
+
+            _simulationComputeShader.SetBuffer(kernel, "Target", _simulationData0);
         }
 
         _simulationComputeShader.SetVector("Size", size);
@@ -39,17 +41,18 @@ public class ComplexWaterSimulator : IWaterSimulator {
         _simulationComputeShader.SetFloat("ManningRoughness", 0.13f);
         _simulationComputeShader.SetFloat("MaxVelocity", 100000f);
 
-        _simulationComputeShader.SetFloat("FoamSpawn", 0f);
-        _simulationComputeShader.SetFloat("FoamDissipation", 0f);
-        _simulationComputeShader.SetFloat("FoamAirTrapMul", 0f);
-        _simulationComputeShader.SetFloat("FoamSteepMul", 0f);
-        _simulationComputeShader.SetFloat("FoamVanishing", 0f);
+        // TODO make parameters
+        _simulationComputeShader.SetFloat("FoamDissipation", 0.1f);
+        _simulationComputeShader.SetFloat("FoamAirTrapMul", 0.03f);
+        _simulationComputeShader.SetFloat("FoamSteepMul", 0.03f);
+        _simulationComputeShader.SetFloat("FoamVanishing", 1f);
 
         Assert.IsTrue(resolution.x % WaterSimulator.KERNEL_SIZE == 0);
         Assert.IsTrue(resolution.y % WaterSimulator.KERNEL_SIZE == 0);
         _dispatchGroupSize = new Vector3Int(resolution.x / WaterSimulator.KERNEL_SIZE, resolution.y / WaterSimulator.KERNEL_SIZE, 1);
 
-        // TODO init buffers
+        // Init buffer
+        _simulationComputeShader.Dispatch(2, _dispatchGroupSize.x, _dispatchGroupSize.y, _dispatchGroupSize.z);
     }
 
     public void Dispatch(float deltaTime) {
