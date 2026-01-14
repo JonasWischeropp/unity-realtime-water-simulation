@@ -19,8 +19,13 @@ DEFINE_TO_INDEX(Resolution)
 
 [numthreads(8,8,1)]
 void AdjustPosition(uint3 id : SV_DispatchThreadID) {
+    float2 normalPosition = float2(id.xy) / (Resolution - 1) - 0.5;
+    float2 xz = normalPosition * Size.xz;
+    // TODO modify uvs?
+
     float depth = Data[ToIndex(id.xy)].x;
-    VertexBuffer[ToIndex(id.xy)].position.y = depth + GetGroundHeight(id.x, id.y, Size) - 0.5 * Size.y + ZFIGHT_OFFSET;
+    float y = depth + GetGroundHeight(id.x, id.y, Size) - 0.5 * Size.y + ZFIGHT_OFFSET;
+    VertexBuffer[ToIndex(id.xy)].position = float3(xz.x, y, xz.y);
 }
 
 [numthreads(8,8,1)]
