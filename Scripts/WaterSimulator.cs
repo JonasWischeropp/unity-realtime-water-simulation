@@ -352,6 +352,7 @@ public class WaterSimulator : MonoBehaviour {
         Vector3 position = transform.position;
         position.y += 0.5f * _size.y;
         _groundDepthCamera.transform.position = position;
+        // Increase size of camera to align the center of a pixel with the vertex
         float dimZ = _size.z * (1f + 1f / _resolution.y);
         float dimX = _size.x * (1f + 1f / _resolution.x);
         _groundDepthCamera.orthographicSize = 0.5f * dimZ;
@@ -370,12 +371,10 @@ public class WaterSimulator : MonoBehaviour {
         }
 
         int i = 0;
-        float xOffset = 0.5f / resolution.x;
-        float yOffset = 0.5f / resolution.y;
         for (int y = 0; y < resolution.y; y++) {
             for (int x = 0; x < resolution.x; x++) {
-                float xc = (float)x / resolution.x + xOffset;
-                float yc = (float)y / resolution.y + yOffset;
+                float xc = (float)x / (resolution.x - 1);
+                float yc = (float)y / (resolution.y - 1);
                 vertices[i] = new Vector3(xc, 0f, yc) - new Vector3(0.5f, 0f, 0.5f);
                 vertices[i].Scale(scale);
                 uvs[i] = new Vector2(xc, yc);
