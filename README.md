@@ -1,5 +1,5 @@
 # Realtime Water Simulation
-This unity package implements a iterative shallow water equation solver to simulate water flow in realtime.
+This unity package implements an iterative shallow water equation solver to simulate water flow in realtime.
 
 TODO: Insert demo video here
 
@@ -9,6 +9,9 @@ The package provides three main components:
 - WaterSimulatorManipulator
 - WaterSimulatroFloater
 <!-- TODO continue explanation -->
+
+### Sample Scene
+For `SampleScene.unity` to work, the free asset pack [Rock and Boulders 2 by Manufactura K4](https://assetstore.unity.com/packages/3d/props/exterior/rock-and-boulders-2-6947) has to be imported into the project.
 
 ## Setup
 Installation using the Package Manager:
@@ -22,7 +25,6 @@ A specific [release](https://github.com/JonasWischeropp/unity-realtime-water-sim
 - check license of water normal texture
 - remove test files
 - write README
-- document/prevent wrong layer (depth camera) setup
 - default values
 
 ## Shader
