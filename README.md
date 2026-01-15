@@ -11,7 +11,7 @@ The package provides three main components:
 <!-- TODO continue explanation -->
 
 ### Sample Scene
-For `SampleScene.unity` to work, the free asset pack [Rock and Boulders 2 by Manufactura K4](https://assetstore.unity.com/packages/3d/props/exterior/rock-and-boulders-2-6947) has to be imported into the project.
+For `SampleScene.unity` to work, the free asset pack [Rock and Boulders 2 by Manufactura K4](https://assetstore.unity.com/packages/3d/props/exterior/rock-and-boulders-2-6947) has to be imported into the project and converted to URP.
 
 ## Setup
 Installation using the Package Manager:
