@@ -420,5 +420,5 @@ void CSMain (uint3 id : SV_DispatchThreadID) {
 [numthreads(8,8,1)]
 void Init(uint3 id : SV_DispatchThreadID) {
     Manipulation[ToIndex(id.xy)] = -1.0;
-    Target[ToIndex(id.xy)] = float4(3.0, 0.0, 0.0, 0.0);
+    Target[ToIndex(id.xy)] = float4(0.0, 0.0, 0.0, 0.0);
 }
