@@ -35,7 +35,6 @@ float3 Size;
 float DeltaTime;
 
 float Gravity;
-float EpsilonDry;
 float ManningRoughness;
 float MaxVelocity;
 
@@ -147,7 +146,7 @@ void CalculateVs (uint3 id : SV_DispatchThreadID) { // TODO naming could be impr
     data.hU = hw_U.x;
     
     // TODO check if "if" is right (page 4 left bottom/ right top)
-    if (V_H.x < EpsilonDry) {
+    if (IsDry(V_H.x)) {
         data.uvL = float2(0.0, 0.0);
         data.uvR = float2(0.0, 0.0);
         data.uvD = float2(0.0, 0.0);
@@ -159,13 +158,13 @@ void CalculateVs (uint3 id : SV_DispatchThreadID) { // TODO naming could be impr
         data.uvD = V_H.yz - (hw_U.x / V_H.x) * DV_y_s.yz; // eq. 19
         data.uvU = V_H.yz + (hw_D.x / V_H.x) * DV_y_s.yz; // eq. 19
     }
-    // data.uvL = hw_L.x < EpsilonDry ? float2(0.0, 0.0)
+    // data.uvL = IsDry(hw_L.x) ? float2(0.0, 0.0)
     //     : V_H.yz - (hw_L.x / V_H.x) * DV_x_s.yz; // eq. 18
-    // data.uvR = hw_R.x < EpsilonDry ? float2(0.0, 0.0)
+    // data.uvR = IsDry(hw_R.x) ? float2(0.0, 0.0)
     //     : V_H.yz + (hw_R.x / V_H.x) * DV_x_s.yz; // eq. 18
-    // data.uvD = hw_D.x < EpsilonDry ? float2(0.0, 0.0)
+    // data.uvD = IsDry(hw_D.x) ? float2(0.0, 0.0)
     //     : V_H.yz - (hw_D.x / V_H.x) * DV_y_s.yz; // eq. 19
-    // data.uvU = hw_U.x < EpsilonDry ? float2(0.0, 0.0)
+    // data.uvU = IsDry(hw_U.x) ? float2(0.0, 0.0)
     //     : V_H.yz + (hw_U.x / V_H.x) * DV_y_s.yz; // eq. 19
     
     float b_L = hw_L.y - hw_L.x; // eq. 20
@@ -364,7 +363,7 @@ float3 R(uint2 coord) {
 // Expects W = (h, u, v)
 float3 Sf_p(float3 W) {
     float h = W.x;
-    if (h <= EpsilonDry) {
+    if (IsDry(h)) {
         return float3(0.0, 0.0, 0.0);
     }
     else {

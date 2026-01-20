@@ -13,4 +13,6 @@ struct Vertex {
     float2 uv;
 };
 
+bool IsDry(float depth) { return depth < 0.001; }
+
 #endif // WATER_SIMULATION_UTILITY_INCLUDED
