@@ -12,6 +12,7 @@
 #pragma kernel Init;
 
 #include "Utility.hlsl"
+#include "GroundHeight.hlsl"
 
 struct CellData {
     float2 uvL, uvR, uvD, uvU;
@@ -20,7 +21,6 @@ struct CellData {
     float1 bL, bR, bD, bU;
 };
 
-Texture2D<float> GroundHeight;
 RWStructuredBuffer<float> Manipulation;
 
 RWStructuredBuffer<float4> Source;
@@ -90,11 +90,7 @@ float ClampFoam(float x, float minX, float maxX) {
 }
 
 float GetGroundLevel(uint x, uint y) {
-#if UNITY_REVERSED_Z
-    return GroundHeight[uint2(x,y)].x *  Size.y;
-#else
-    return (1.0 - GroundHeight[uint2(x,y)].x) *  Size.y;
-#endif
+    return GetGroundHeight(x, y, Size);
 }
 
 float4 V(uint x, uint y, out float foam) {
