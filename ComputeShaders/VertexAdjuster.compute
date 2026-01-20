@@ -4,8 +4,6 @@
 #include "Utility.hlsl"
 #include "GroundHeight.hlsl"
 
-#define ZFIGHT_OFFSET 0.0001
-
 RWStructuredBuffer<Vertex> VertexBuffer;
 
 StructuredBuffer<float4> Data;
@@ -19,12 +17,55 @@ DEFINE_TO_INDEX(Resolution)
 
 [numthreads(8,8,1)]
 void AdjustPosition(uint3 id : SV_DispatchThreadID) {
-    float2 normalPosition = float2(id.xy) / (Resolution - 1) - 0.5;
-    float2 xz = normalPosition * Size.xz;
-    // TODO modify uvs?
+    uint2 coordPlusOne = min(id.xy + 1, Resolution - 1); // TODO refactor
+    uint2 coordMinusOne = max(int2(id.xy) - 1, int2(0, 0));
 
-    float depth = Data[ToIndex(id.xy)].x;
-    float y = depth + GetGroundHeight(id.x, id.y, Size) - 0.5 * Size.y + ZFIGHT_OFFSET;
+    float depthCenter = Data[ToIndex(id.xy)].x;
+    float depthLeft = Data[ToIndex(coordMinusOne.x, id.y)].x;
+    float depthRight = Data[ToIndex(coordPlusOne.x, id.y)].x;
+    float depthDown = Data[ToIndex(id.x, coordMinusOne.y)].x;
+    float depthUp = Data[ToIndex(id.x, coordPlusOne.y)].x;
+
+    float groundCenter = GetGroundHeight(id.x, id.y, Size);
+    float groundLeft = GetGroundHeight(coordMinusOne.x, id.y, Size);
+    float groundRight = GetGroundHeight(coordPlusOne.x, id.y, Size);
+    float groundDown = GetGroundHeight(id.x, coordMinusOne.y, Size);
+    float groundUp = GetGroundHeight(id.x, coordPlusOne.y, Size);
+
+    float surfaceCenter = depthCenter + groundCenter;
+    float surfaceLeft = depthLeft + groundLeft;
+    float surfaceRight = depthRight + groundRight;
+    float surfaceDown = depthDown + groundDown;
+    float surfaceUp = depthUp + groundUp;
+
+
+    float level = surfaceCenter;
+    int2 gridPos = id.xy;
+    // TODO this causes flickering
+    if (IsDry(depthCenter)) {
+        // Make shoreline flat (vertical adjustment of dry cells)
+        level = groundCenter;
+        if (!IsDry(depthLeft)) level = min(level, surfaceLeft);
+        if (!IsDry(depthRight)) level = min(level, surfaceRight);
+        if (!IsDry(depthDown)) level = min(level, surfaceDown);
+        if (!IsDry(depthUp)) level = min(level, surfaceUp);
+    }
+#if false // TODO fix
+    else if (id.x > 0 && id.x < Resolution.x && id.y > 0 && id.y < Resolution.y) {
+        // Horizontal adjustment to reduce clipping through the ground
+        if (groundCenter > surfaceLeft) gridPos.x--;
+        if (groundCenter > surfaceRight) gridPos.x++;
+        if (groundCenter > surfaceDown) gridPos.y--;
+        if (groundCenter > surfaceUp) gridPos.y++;
+    }
+#endif
+
+    float2 normalPosition = float2(gridPos) / (Resolution - 1) - 0.5;
+    float2 xz = normalPosition * Size.xz;
+
+    // UVs should not be adjusted
+
+    float y = level - 0.5 * Size.y;
     VertexBuffer[ToIndex(id.xy)].position = float3(xz.x, y, xz.y);
 }
 
