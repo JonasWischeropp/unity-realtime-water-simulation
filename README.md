@@ -1,5 +1,5 @@
 # Realtime Water Simulation
-This unity package implements an iterative shallow water equation solver to simulate water flow in realtime.
+This Unity package implements an iterative shallow water equation solver to simulate water flow in realtime.
 
 TODO: Insert demo video here
 
@@ -22,6 +22,7 @@ A specific [release](https://github.com/JonasWischeropp/unity-realtime-water-sim
 4. Press the `Add`-Button
 
 # TODO
+- asset vs. package? (what should be in the asset folder?)
 - check license of water normal texture
 - remove test files
 - write README
