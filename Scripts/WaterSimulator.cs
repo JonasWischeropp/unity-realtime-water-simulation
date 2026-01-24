@@ -438,18 +438,4 @@ public class WaterSimulator : MonoBehaviour {
         // _groundDepthCamera.cullingMask = _groundLayer;
     }
 #endif
-
-    // TODO should I do it like this or differently
-    void SupplySize(ComputeShader shader) {
-        shader.SetVector(ShaderIDs.Size, _size);
-    }
-    void SupplyResolution(ComputeShader shader) {
-        shader.SetInts(ShaderIDs.Resolution, new int[] { _resolution.x, _resolution.y });
-    }
-    void SupplyStepSize(ComputeShader shader) {
-        shader.SetFloats(ShaderIDs.StepSize, new float[] { _size.x / (_resolution.x - 1), _size.z / (_resolution.y - 1) });
-    }
-    void SupplyStepSizeInv(ComputeShader shader) {
-        shader.SetFloats(ShaderIDs.StepSizeInv, new float[] { (_resolution.x - 1) / _size.x, (_resolution.y - 1) / _size.z });
-    }
 }
