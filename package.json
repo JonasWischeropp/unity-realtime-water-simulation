@@ -2,7 +2,7 @@
     "name": "jonaswischeropp.unity-unity-realtime-water-simulation",
     "version": "0.0.0",
     "displayName": "Realtime Water Simulation",
-    "description": "A realtime water simulator based on shallow water equations.",
+    "description": "A realtime water simulator using shallow water equations.",
     "author": {
         "name": "Jonas Wischeropp"
     }
