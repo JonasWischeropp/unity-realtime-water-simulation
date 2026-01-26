@@ -32,8 +32,10 @@ public class GameObjectCreationMenu {
         go.layer = LayerMask.NameToLayer("Water");
         var renderer = go.GetComponent<MeshRenderer>();
         renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        renderer.material = 
-            AssetDatabase.LoadAssetByGUID<Material>(new GUID("a0c1e526ebbaf0af2b220c4747114b56")); // TODO replace with correct GUID
+
+        // Not using AssetDatabase.LoadAssetByGUID because it is not supported in old versions.
+        string path = AssetDatabase.GUIDToAssetPath(new GUID("a0c1e526ebbaf0af2b220c4747114b56")); // TODO replace with correct GUID
+        renderer.material = AssetDatabase.LoadAssetAtPath<Material>(path);
     }
 
     [MenuItem(PATH + "Manipulator", priority = MENU_PRIORITY + 2)]
