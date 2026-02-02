@@ -1,13 +1,16 @@
 # Realtime Water Simulation
 This Unity package implements an iterative shallow water equation solver to simulate water flow in realtime.
 
+> [!IMPORTANT]
+> WIP: Parts of the simulation and api might not be stable!
+
 TODO: Insert demo video here
 
 ## Usage
 The package provides three main components:
 - WaterSimulator
 - WaterSimulatorManipulator
-- WaterSimulatroFloater
+- WaterSimulatorFloater
 <!-- TODO continue explanation -->
 
 ### Sample Scene
