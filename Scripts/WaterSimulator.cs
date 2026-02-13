@@ -90,17 +90,15 @@ public class WaterSimulator : MonoBehaviour {
     float _shaderTimeStep = 0.02f;
     bool _simulate = false;
 
+    MaterialPropertyBlock _materialPropertyBlock;
+
     void Update() {
         if (!_simulate) {
             return;
         }
 
-        Material material = _meshRenderer.material;
-        material.SetVector("WaterSimulator_Size", _size);
-        material.SetVector("WaterSimulator_Resolution", new Vector4(_resolution.x, _resolution.y));
-        material.SetVector("WaterSimulator_StepSize", new Vector4(_size.x / (_resolution.x - 1), _size.z / (_resolution.y - 1)));
-        material.SetVector("WaterSimulator_StepSizeInv", new Vector4((_resolution.x - 1) / _size.x, (_resolution.y - 1) / _size.z));
-        material.SetBuffer("WaterSimulator_Data", _waterSimulator.GetSimulationData());
+        _materialPropertyBlock.SetBuffer("WaterSimulator_Data", _waterSimulator.GetSimulationData());
+        _meshRenderer.SetPropertyBlock(_materialPropertyBlock);
 
         UpdateManipulationBuffer();
 
@@ -171,6 +169,16 @@ public class WaterSimulator : MonoBehaviour {
     }
     void SetShaderSimStepSizeInv(ComputeShader shader) {
         shader.SetFloats(ShaderIDs.StepSizeInv, new float[] { (_resolution.x - 1) / _size.x, (_resolution.y - 1) / _size.z });
+    }
+
+    void InitMaterial() {
+        _materialPropertyBlock = new MaterialPropertyBlock();
+        _materialPropertyBlock.SetVector("WaterSimulator_Size", _size);
+        _materialPropertyBlock.SetVector("WaterSimulator_Resolution", new Vector4(_resolution.x, _resolution.y));
+        _materialPropertyBlock.SetVector("WaterSimulator_StepSize", new Vector4(_size.x / (_resolution.x - 1), _size.z / (_resolution.y - 1)));
+        _materialPropertyBlock.SetVector("WaterSimulator_StepSizeInv", new Vector4((_resolution.x - 1) / _size.x, (_resolution.y - 1) / _size.z));
+        _materialPropertyBlock.SetBuffer("WaterSimulator_Data", _waterSimulator.GetSimulationData());
+        _meshRenderer.SetPropertyBlock(_materialPropertyBlock);
     }
 
     void InitHeight() {
@@ -288,6 +296,8 @@ public class WaterSimulator : MonoBehaviour {
         InitManipulatorBaker();
     
         InitHeight();
+
+        InitMaterial();
 
         UpdateManipulationBuffer();
 
