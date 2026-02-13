@@ -1,6 +1,5 @@
 #if UNITY_EDITOR
 using System;
-using JonasWischeropp.Unity.Utility;
 using UnityEditor;
 using UnityEngine;
 
@@ -25,6 +24,7 @@ public class GameObjectCreationMenu {
         var go = new GameObject(name, components);
         go.transform.position = SpawnPosition();
         Selection.objects = new UnityEngine.Object[]{go};
+        Undo.RegisterCreatedObjectUndo(go, $"Create WaterSimulator:{name}");
         return go;
     }
 
