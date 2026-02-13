@@ -2,7 +2,7 @@
 This Unity package implements an iterative shallow water equation solver to simulate water flow in realtime.
 
 > [!IMPORTANT]
-> WIP: Parts of the simulation and api might not be stable!
+> WIP: Parts of the simulation and api might not be fully stable yet!
 
 TODO: Insert demo video here
 
