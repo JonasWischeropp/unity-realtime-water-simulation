@@ -13,45 +13,23 @@ RequireComponent(typeof(MeshRenderer), typeof(MeshFilter))]
 [DefaultExecutionOrder(EXECUTION_ORDER)]
 public class WaterSimulator : MonoBehaviour {
     public const int EXECUTION_ORDER = 100;
-    // public struct DimensionInfo {
-    //     // TODO lets see whether these need to be aligned
-    //     public readonly Vector3 Size;
-    //     public readonly Vector2 StepSize;
-    //     public readonly Vector2 StepSizeInv;
-    //     public readonly Vector2Int Resolution;
-
-    //     public DimensionInfo (Vector3 size, Vector2Int resolution) {
-    //         Resolution = resolution;
-    //         Size = size;
-    //         StepSize = new Vector2(Size.x / (Resolution.x - 1), Size.z / (Resolution.y - 1));
-    //         StepSizeInv = new Vector2(1f / StepSize.x, 1f / StepSize.y);
-    //     }
-    // }
-
     public readonly static Color GIZMO_COLOR = Color.green;
     public const int KERNEL_SIZE = 8;
+
+    [SerializeField]
+    Vector3 _size = Vector3.one * 10f;
 
     [SerializeField, Step(KERNEL_SIZE, 2)]
     Vector2Int _resolution = Vector2Int.one * 64;
     [SerializeField]
-    LayerMask _groundLayer = 1; // Default
-    [SerializeField]
-    Vector3 _size = Vector3.one * 10f;
+    LayerMask _groundLayer = 1; // Default layer
     
-    [SerializeField, HideInInspector]
     Camera _groundDepthCamera;
-    [SerializeField, HideInInspector]
     GameObject _cameraHolder;
-    [SerializeField, HideInInspector]
     MeshRenderer _meshRenderer;
-    [SerializeField, HideInInspector]
     MeshFilter _meshFilter;
 
     RenderTexture _groundDepthTexture;
-
-    // TODO set this up
-    [SerializeField]
-    int _depthRendererIndex = 1;
 
     [SerializeField]
     float _gravity = 9.81f;
@@ -63,22 +41,23 @@ public class WaterSimulator : MonoBehaviour {
     UnityEngine.Object[] _customComponents;
 #endif
 
-    [SerializeField]
+    [SerializeField, HideInInspector]
     ComputeShader _simulationComputeShader;
-    [SerializeField]
+    [SerializeField, HideInInspector]
     ComputeShader _complexSimulationComputeShader;
 
-    [SerializeField] ComputeShader _manipulatorBakerShader;
+    [SerializeField, HideInInspector]
+    ComputeShader _manipulatorBakerShader;
     ComputeBuffer _manipulationBuffer;
     PackedComputeBuffer<WaterManipulator, Vector4> _manipulators;
 
-    [SerializeField]
+    [SerializeField, HideInInspector]
     ComputeShader _quadDiagonalSwapperShader;
-    [SerializeField] ComputeShader _vertexAdjusterShader;
+    [SerializeField, HideInInspector] 
+    ComputeShader _vertexAdjusterShader;
 
-    [SerializeField] bool _postProcessMesh = true;
-
-    [SerializeField] float _simulationInterval = 0.0f;
+    [SerializeField]
+    bool _postProcessMesh = true;
 
     IWaterSimulator _waterSimulator;
     [SerializeField]
@@ -242,9 +221,7 @@ public class WaterSimulator : MonoBehaviour {
     }
 
     Vector4 ConvertToManipulatorData(Vector3 worldPosition, float radius) {
-        // Vector3 localPosition = Divide(transform.InverseTransformPoint(worldPosition), _size) + 0.5f * Vector3.one;
         Vector3 localPosition = transform.InverseTransformPoint(worldPosition) + 0.5f * _size;
-        // Debug.Log(localPosition);
         return new Vector4(localPosition.x, localPosition.y, localPosition.z, radius);
     }
 
@@ -323,13 +300,8 @@ public class WaterSimulator : MonoBehaviour {
 
     // TODO Should this be inaccessible?
     public void SetBounds(Vector3 center, Vector3 size) {
-        if (transform.position == center && _size == size) {
-            return;
-        }
-
         transform.position = center;
         _size = size;
-        // CalibrateCamera();
     }
     
     public Vector3 GetCenter() {
@@ -434,7 +406,7 @@ public class WaterSimulator : MonoBehaviour {
         HideFlags flags = hide
             ? HideFlags.HideInInspector | HideFlags.HideInHierarchy
             : HideFlags.None;
-        // TODO MeshFilter doesn't always respect hideflags
+        // TODO MeshFilter doesn't always respect hideFlags
         foreach (var component in _customComponents) {
             component.hideFlags = flags;
         }
@@ -452,12 +424,10 @@ public class WaterSimulator : MonoBehaviour {
 
     void OnValidate() {
         _waterSimulator?.SetGravity(_gravity);
-        // if (_size != _oldSize) {
-        //     SetBounds(GetCenter(), _size);
-        //     _oldSize = _size;
-        // }
 
-        // _groundDepthCamera.cullingMask = _groundLayer;
+        if (_groundDepthCamera) {
+            _groundDepthCamera.cullingMask = _groundLayer;
+        }
     }
 #endif
 }
