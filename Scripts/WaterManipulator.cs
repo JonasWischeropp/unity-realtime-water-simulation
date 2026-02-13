@@ -1,4 +1,6 @@
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 
 [AddComponentMenu("WaterSimulator/Water Manipulator")]
@@ -47,12 +49,26 @@ public class WaterManipulator : MonoBehaviour {
         return transform.localScale.x; // TODO should lossyScale be used and what needs to be adjusted?
     }
 
+#if UNITY_EDITOR
+    public void SetSimulator(WaterSimulator simulator) {
+        if (EditorApplication.isPlaying && enabled) {
+            _simulator?.RemoveManipulator(this);
+            _simulator = simulator;
+            _simulator?.AddManipulator(this, GetPosition(), GetSize());
+        }
+        else {
+            _simulator = simulator;
+        }
+    }
+#endif
+
     void OnDrawGizmosSelected() {
         Handles.color = Color.blue;
         Handles.DrawWireDisc(transform.position, transform.up, GetSize());
     }
 }
 
+#if UNITY_EDITOR
 [CustomEditor(typeof(WaterManipulator))]
 public class WaterManipulatorEditor : ScriptlessEditor {
     public override void OnInspectorGUI() {
@@ -61,3 +77,4 @@ public class WaterManipulatorEditor : ScriptlessEditor {
         }
     }
 }
+#endif

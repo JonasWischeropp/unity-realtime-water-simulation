@@ -1,4 +1,6 @@
+#if UNITY_EDITOR
 using System;
+using JonasWischeropp.Unity.Utility;
 using UnityEditor;
 using UnityEngine;
 
@@ -34,17 +36,36 @@ public class GameObjectCreationMenu {
         renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
         // Not using AssetDatabase.LoadAssetByGUID because it is not supported in old versions.
-        string path = AssetDatabase.GUIDToAssetPath(new GUID("a0c1e526ebbaf0af2b220c4747114b56")); // TODO replace with correct GUID
+        string path = AssetDatabase.GUIDToAssetPath(new GUID("b768d0c7e99c8660d83b040a5ceef93c"));
         renderer.material = AssetDatabase.LoadAssetAtPath<Material>(path);
     }
 
     [MenuItem(PATH + "Manipulator", priority = MENU_PRIORITY + 2)]
     static void CreateManipulator() {
-        SpawnGameObject("Manipulator", typeof(WaterManipulator));
+        GameObject go = SpawnGameObject("Manipulator", typeof(WaterManipulator));
+        go.GetComponent<WaterManipulator>().SetSimulator(GetClosestSimulator());
     }
 
     [MenuItem(PATH + "Floater", priority = MENU_PRIORITY + 3)]
     static void CreateFloater() {
-        SpawnGameObject("Floater", typeof(WaterSimulationFloater));
+        GameObject go = SpawnGameObject("Floater", typeof(WaterSimulationFloater));
+        go.GetComponent<WaterSimulationFloater>().SetSimulator(GetClosestSimulator());
+    }
+
+    static WaterSimulator GetClosestSimulator() {
+        WaterSimulator[] simulators = SceneView.FindObjectsByType<WaterSimulator>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        Vector3 spawnPosition = SpawnPosition();
+
+        float minDistance = float.PositiveInfinity;
+        WaterSimulator closestSimulator = null;
+        foreach (WaterSimulator simulator in simulators) {
+            float distance = (spawnPosition - simulator.transform.position).sqrMagnitude;
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestSimulator = simulator;
+            }
+        }
+        return closestSimulator;
     }
 }
+#endif

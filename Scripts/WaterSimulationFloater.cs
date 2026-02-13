@@ -6,6 +6,11 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 [DefaultExecutionOrder(WaterSimulator.EXECUTION_ORDER + 1)]
 public class WaterSimulationFloater : MonoBehaviour {
+
+    public void SetSimulator(WaterSimulator simulator) {
+        // TODO implement special logic at runtime
+    }
+
 #if false
     [Serializable]
     public class Floater {
