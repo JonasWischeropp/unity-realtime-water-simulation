@@ -76,45 +76,57 @@ public class WaterSimulator : MonoBehaviour {
     ComputeShader _quadDiagonalSwapperShader;
     [SerializeField] ComputeShader _vertexAdjusterShader;
 
-    [SerializeField] bool _swap = true;
-    [SerializeField] bool _step = false;
+    [SerializeField] bool _postProcessMesh = true;
 
-    [SerializeField] float _deltaTime = 0.005f;
     [SerializeField] float _simulationInterval = 0.0f;
 
     IWaterSimulator _waterSimulator;
     [SerializeField]
     bool _useSimple = false;
 
-    void Update() {
-        if (_step) {
-            _step = false;
-            Dispatch();
-        }
-        UpdateManipulationBuffer();
-        // Texture2D texture = new Texture2D(256, 256, UnityEngine.Experimental.Rendering.GraphicsFormat.R32G32B32A32_SFloat, UnityEngine.Experimental.Rendering.TextureCreationFlags.DontInitializePixels);
+    [SerializeField]
+    int _updatesPerFixedUpdate = 2;
+    [SerializeField]
+    float _shaderTimeStep = 0.02f;
+    bool _simulate = false;
 
-        _meshRenderer.material.SetVector("WaterSimulator_Size", _size);
-        _meshRenderer.material.SetVector("WaterSimulator_Resolution", new Vector4(_resolution.x, _resolution.y));
-        _meshRenderer.material.SetVector("WaterSimulator_StepSize", new Vector4(_size.x / (_resolution.x - 1), _size.z / (_resolution.y - 1)));
-        _meshRenderer.material.SetVector("WaterSimulator_StepSizeInv", new Vector4((_resolution.x - 1) / _size.x, (_resolution.y - 1) / _size.z));
-        _meshRenderer.material.SetBuffer("WaterSimulator_Data", _waterSimulator.GetSimulationData());
+    void Update() {
+        if (!_simulate) {
+            return;
+        }
+
+        Material material = _meshRenderer.material;
+        material.SetVector("WaterSimulator_Size", _size);
+        material.SetVector("WaterSimulator_Resolution", new Vector4(_resolution.x, _resolution.y));
+        material.SetVector("WaterSimulator_StepSize", new Vector4(_size.x / (_resolution.x - 1), _size.z / (_resolution.y - 1)));
+        material.SetVector("WaterSimulator_StepSizeInv", new Vector4((_resolution.x - 1) / _size.x, (_resolution.y - 1) / _size.z));
+        material.SetBuffer("WaterSimulator_Data", _waterSimulator.GetSimulationData());
+
+        UpdateManipulationBuffer();
+
+        if (_postProcessMesh) {
+            DispatchVertexAdjuster();
+            DispatchQuadDiagonalSwapper();
+        }
     }
 
-    IEnumerator Sim() {
-        yield return new WaitForSeconds(1f);
-        while (true) {
+    IEnumerator EnableSimulationNextFrame() {
+        yield return null;
+        _simulate = true;
+    }
+
+    void FixedUpdate() {
+        if (!_simulate) {
+            return;
+        }
+
+        for (int i = 0; i < _updatesPerFixedUpdate; i++) {
             Dispatch();
-            DispatchVertexAdjuster();
-            if (_swap) {
-                DispatchQuadDiagonalSwapper();
-            }
-            yield return new WaitForSeconds(_simulationInterval);
         }
     }
 
     void Dispatch() {
-        _waterSimulator.Dispatch(_deltaTime);
+        _waterSimulator.Dispatch(_shaderTimeStep);
     }
 
     Vector3 Divide(Vector3 A, Vector3 B) {
@@ -284,7 +296,7 @@ public class WaterSimulator : MonoBehaviour {
         SetHideComponents(true);
 #endif
 
-        StartCoroutine(Sim());
+        StartCoroutine(EnableSimulationNextFrame());
     }
 
     void OnDestroy() {
