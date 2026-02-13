@@ -38,7 +38,7 @@ public class ComplexWaterSimulator : IWaterSimulator {
         // TODO parameter
         _simulationComputeShader.SetFloat("Gravity", 9.81f);
         _simulationComputeShader.SetFloat("ManningRoughness", 0.13f);
-        _simulationComputeShader.SetFloat("MaxVelocity", 100000f);
+        _simulationComputeShader.SetFloat("MaxVelocity", 10f);
 
         // TODO make parameters
         _simulationComputeShader.SetFloat("FoamDissipation", 0.1f);
