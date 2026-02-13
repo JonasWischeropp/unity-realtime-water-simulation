@@ -626,8 +626,8 @@ Transform:
   m_GameObject: {fileID: 233181450}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 6.39, y: 32.76, z: 47.1}
-  m_LocalScale: {x: 4.78, y: 4.78, z: 4.78}
+  m_LocalPosition: {x: 5, y: 32.9, z: 47.3}
+  m_LocalScale: {x: 7.7, y: 7.7, z: 7.7}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
@@ -2624,8 +2624,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 770755268}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.18386628, y: 0.4078836, z: -0.08430471, w: -0.89034647}
-  m_LocalPosition: {x: 22.486977, y: 62.812355, z: -24.483992}
+  m_LocalRotation: {x: -0.052910883, y: 0.9415779, z: -0.17899284, w: -0.28034455}
+  m_LocalPosition: {x: -9.119598, y: 33.623856, z: 62.155563}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3498,8 +3498,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 1
-  m_Color: {r: 1, g: 0.9647059, b: 0.85882354, a: 1}
-  m_Intensity: 2
+  m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
+  m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -3538,7 +3538,7 @@ Light:
     serializedVersion: 2
     m_Bits: 4294967295
   m_RenderingLayerMask: 1
-  m_Lightmapping: 4
+  m_Lightmapping: 1
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
   m_BounceIntensity: 1
@@ -6105,7 +6105,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d950caf5f7a62704aab4ff3083bc27bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WaterSimulator
-  _resolution: {x: 64, y: 64}
+  _resolution: {x: 256, y: 256}
   _groundLayer:
     serializedVersion: 2
     m_Bits: 1
@@ -6122,11 +6122,11 @@ MonoBehaviour:
   _manipulatorBakerShader: {fileID: 7200000, guid: d1e0732df07fb52618735176a14bcfea, type: 3}
   _quadDiagonalSwapperShader: {fileID: 7200000, guid: 5f31d75ba974ee3d1b1259501175cb59, type: 3}
   _vertexAdjusterShader: {fileID: 7200000, guid: d619b6724a9065600ac09f3e25bb355a, type: 3}
-  _swap: 1
-  _step: 0
-  _deltaTime: 0.01
+  _postProcessMesh: 1
   _simulationInterval: 0
   _useSimple: 0
+  _updatesPerFixedUpdate: 2
+  _shaderTimeStep: 0.01
 --- !u!33 &1895275426
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -6143,7 +6143,7 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1895275424}
   m_Enabled: 1
-  m_CastShadows: 1
+  m_CastShadows: 0
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
@@ -6160,7 +6160,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -876546973899608171, guid: e70b8a117e7e27643931179e702b01f5, type: 3}
+  - {fileID: 2100000, guid: b768d0c7e99c8660d83b040a5ceef93c, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -6555,7 +6555,7 @@ GameObject:
   - component: {fileID: 2061265056}
   - component: {fileID: 2061265055}
   - component: {fileID: 2061265054}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
