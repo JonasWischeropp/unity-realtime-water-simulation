@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
@@ -16,11 +17,7 @@ public class GameObjectCreationMenu {
         return Vector3.zero;
     }
     
-    static GameObject SpawnGameObject(string name, Type component) {
-        return SpawnGameObject(name, new Type[]{component});
-    }
-
-    static GameObject SpawnGameObject(string name, Type[] components) {
+    static GameObject SpawnGameObject(string name, params Type[] components) {
         var go = new GameObject(name, components);
         go.transform.position = SpawnPosition();
         Selection.objects = new UnityEngine.Object[]{go};
@@ -30,7 +27,7 @@ public class GameObjectCreationMenu {
 
     [MenuItem(PATH + "Simulator", priority = MENU_PRIORITY + 1)]
     static void CreateSimulator() {
-        GameObject go = SpawnGameObject("Simulator", typeof(WaterSimulator));
+        GameObject go = SpawnGameObject("Simulator", typeof(WaterSimulator), typeof(WaterSimulatorSampler));
         go.layer = LayerMask.NameToLayer("Water");
         var renderer = go.GetComponent<MeshRenderer>();
         renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -43,29 +40,29 @@ public class GameObjectCreationMenu {
     [MenuItem(PATH + "Manipulator", priority = MENU_PRIORITY + 2)]
     static void CreateManipulator() {
         GameObject go = SpawnGameObject("Manipulator", typeof(WaterManipulator));
-        go.GetComponent<WaterManipulator>().SetSimulator(GetClosestSimulator());
+        go.GetComponent<WaterManipulator>().SetSimulator(GetClosestOfType<WaterSimulator>());
     }
 
     [MenuItem(PATH + "Floater", priority = MENU_PRIORITY + 3)]
     static void CreateFloater() {
         GameObject go = SpawnGameObject("Floater", typeof(WaterSimulationFloater));
-        go.GetComponent<WaterSimulationFloater>().SetSimulator(GetClosestSimulator());
+        go.GetComponent<WaterSimulationFloater>().SetSimulatorSampler(GetClosestOfType<WaterSimulatorSampler>());
     }
 
-    static WaterSimulator GetClosestSimulator() {
-        WaterSimulator[] simulators = SceneView.FindObjectsByType<WaterSimulator>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+    static T GetClosestOfType<T>() where T : UnityEngine.Object {
+        T[] objects = SceneView.FindObjectsByType<T>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         Vector3 spawnPosition = SpawnPosition();
 
         float minDistance = float.PositiveInfinity;
-        WaterSimulator closestSimulator = null;
-        foreach (WaterSimulator simulator in simulators) {
-            float distance = (spawnPosition - simulator.transform.position).sqrMagnitude;
+        T closest = null;
+        foreach (T ob in objects) {
+            float distance = (spawnPosition - ob.GameObject().transform.position).sqrMagnitude;
             if (distance < minDistance) {
                 minDistance = distance;
-                closestSimulator = simulator;
+                closest = ob;
             }
         }
-        return closestSimulator;
+        return closest;
     }
 }
 #endif

@@ -18,4 +18,7 @@ public static class ShaderIDs {
     public static readonly int Manipulators = Shader.PropertyToID("Manipulators");
     public static readonly int ManipulatorsCount = Shader.PropertyToID("ManipulatorsCount");
     public static readonly int Manipulation = Shader.PropertyToID("Manipulation");
+
+    public static readonly int Positions = Shader.PropertyToID("Positions");
+    public static readonly int SampledData = Shader.PropertyToID("SampledData");
 }

@@ -51,6 +51,10 @@ public class WaterManipulator : MonoBehaviour {
 
 #if UNITY_EDITOR
     public void SetSimulator(WaterSimulator simulator) {
+        if (simulator == _simulator) {
+            return;
+        }
+
         if (EditorApplication.isPlaying && enabled) {
             _simulator?.RemoveManipulator(this);
             _simulator = simulator;

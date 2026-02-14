@@ -75,15 +75,6 @@ float4 minmod(float4 a, float4 b, float4 c) {
     return result;
 }
 
-
-float bilinearInterpolate(float bl, float br, float tl, float tr, float2 weights) {
-    float2 xInterpolate = lerp(
-        float2(tl, bl),
-        float2(tr, br), weights.x);
-    float yInterpolate = lerp(xInterpolate.y, xInterpolate.x, weights.y);
-    return yInterpolate;
-}
-
 float ClampFoam(float x, float minX, float maxX) {
     return (min(x, maxX) - min(x, minX)) / (maxX - minX);
 }

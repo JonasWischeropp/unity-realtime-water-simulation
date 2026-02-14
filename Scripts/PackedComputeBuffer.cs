@@ -1,9 +1,9 @@
-// TODO clean up
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PackedComputeBuffer<Key, Value> : IDisposable where Value : notnull {
+public class PackedComputeBuffer<Key, Value> : IDisposable, IEnumerable<(Key, Value)> where Value : notnull {
     Dictionary<Key, int> _keyToIndex = new Dictionary<Key, int>();
     Key[] _indexToKey;
     Value[] _data;
@@ -137,46 +137,14 @@ public class PackedComputeBuffer<Key, Value> : IDisposable where Value : notnull
         return _high != -1;
     }
 
-    // public void ForEach(Action<Key, int> action) {
-    //     for (int i = 0; i < _currentIndex; i++) {
-    //         Key key = _indexToKey[i];
-    //         action.Invoke(key, i);
-    //     }
-    // }
-
-    public IEnumerable<(Key, Value)> GetEnumerable() {
+    public IEnumerator<(Key, Value)> GetEnumerator() {
         for (int i = 0; i < _currentIndex; i++) {
             Key key = _indexToKey[i];
             yield return (key, _data[i]);
         }
     }
+
+    IEnumerator IEnumerable.GetEnumerator() {
+        return GetEnumerator();
+    }
 }
-
-// public class PackedComputeBuffer<Key, Data, Input> where Data : notnull {
-//     private PackedComputeBuffer<Key, Data> _buffer;
-//     private Func<Input, Data> _mapFunc;
-
-//     public ComputeBuffer Buffer => _buffer.Buffer;
-//     public int Count => _buffer.Count;
-
-//     public event Action<int, int> OnSwap { add => _buffer.OnSwap += value; remove => _buffer.OnSwap -= value; }
-//     public event Action<int> OnResize { add => _buffer.OnResize += value; remove => _buffer.OnResize -= value; }
-//     // TODO improve with inheritance or similar
-
-//     public PackedComputeBuffer(int minSize, int strideSize, Func<Input, Data> mapFunc) {
-//         _buffer = new PackedComputeBuffer<Key, Data>(minSize, strideSize);
-//         _mapFunc = mapFunc;
-//     }
-
-//     public void Add(Key key, Input data) => _buffer.Add(key, _mapFunc(data));
-
-//     public bool Remove(Key key) => _buffer.Remove(key);
-
-//     public void UpdateValues(Key key, Input data) => _buffer.UpdateValues(key, _mapFunc(data));
-
-//     public bool UpdateBuffer() => _buffer.UpdateBuffer();
-
-//     public void ForEach(Action<Key, int> action) => _buffer.ForEach(action);
-
-//     public void Release() => _buffer.Release();
-// }

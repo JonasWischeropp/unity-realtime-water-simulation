@@ -1,0 +1,55 @@
+#pragma kernel NearestSample
+#pragma kernel BilinearSample
+
+#include "Utility.hlsl"
+#include "GroundHeight.hlsl"
+
+StructuredBuffer<float2> Positions; // in SimulationSpace: [(0,0,0), Size]
+
+StructuredBuffer<float4> Data;
+
+RWStructuredBuffer<float4> SampledData;
+
+uint2 Resolution;
+float3 Size;
+
+DEFINE_TO_INDEX(Resolution);
+
+float GetGroundLevel(uint x, uint y) {
+    return GetGroundHeight(x, y, Size);
+}
+
+float2 GridPosition(uint idx) {
+    return clamp(Positions[idx] / Size.xz, 0.0, 1.0) * Resolution;
+}
+
+[numthreads(64,1,1)]
+void NearestSample(uint3 id : SV_DispatchThreadID) {
+    float2 gridPosition = GridPosition(id.x);
+    uint2 pos = min(uint2(gridPosition), Resolution - 1);
+    uint idx = ToIndex(pos.xy);
+    SampledData[id.x] = float4(Data[idx].xyz, GetGroundLevel(pos.x, pos.y));
+}
+
+[numthreads(64,1,1)]
+void BilinearSample(uint3 id : SV_DispatchThreadID) {
+    float2 gridPosition = GridPosition(id.x);
+    uint2 pos = min(uint2(gridPosition), Resolution - 1);
+    float2 weights = frac(gridPosition);
+
+    uint idx_LD = ToIndex(pos.xy);
+    uint idx_RD = idx_LD + 1;
+    uint idx_LU = idx_LD + Resolution.x;
+    uint idx_RU = idx_RD + Resolution.x;
+    
+    float4 xInterpolate_D = lerp(Data[idx_LD], Data[idx_RD], weights.x);
+    float4 xInterpolate_U = lerp(Data[idx_LU], Data[idx_RU], weights.x);
+    float4 yInterpolate = lerp(xInterpolate_D, xInterpolate_U, weights.y);
+
+    float groundLerp = bilinearInterpolate(
+        GetGroundLevel(pos.x, pos.y),     GetGroundLevel(pos.x + 1, pos.y), 
+        GetGroundLevel(pos.x, pos.y + 1), GetGroundLevel(pos.x + 1, pos.y + 1), 
+        weights);
+
+    SampledData[id.x] = float4(yInterpolate.xyz, groundLerp);
+}

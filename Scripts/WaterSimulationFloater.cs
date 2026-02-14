@@ -1,14 +1,99 @@
 using System;
-using UnityEditor;
 using UnityEngine;
 
 [AddComponentMenu("WaterSimulator/Floater")]
 [RequireComponent(typeof(Rigidbody))]
-[DefaultExecutionOrder(WaterSimulator.EXECUTION_ORDER + 1)]
+[DefaultExecutionOrder(WaterSimulator.EXECUTION_ORDER + 2)]
 public class WaterSimulationFloater : MonoBehaviour {
+    [Serializable]
+    public class Floater {
+        [SerializeField]
+        public Vector3 Offset = Vector3.zero;
+        [SerializeField]
+        public float Size = 1f;
+    }
 
-    public void SetSimulator(WaterSimulator simulator) {
+    [SerializeField]
+    WaterSimulatorSampler _sampler;
+
+    [SerializeField]
+    Floater[] _floaters = new Floater[]{new Floater()};
+
+    Rigidbody _rigidbody;
+
+    [SerializeField]
+    float _density = 0f;
+
+    [SerializeField]
+    bool _positionPrediction = true;
+
+    Action<WaterSimulatorSampler.WaterPositionInfo>[] _callbacks;
+
+    void Awake() {
+        _rigidbody = GetComponent<Rigidbody>();
+        _callbacks = new Action<WaterSimulatorSampler.WaterPositionInfo>[_floaters.Length];
+        _infos = new WaterSimulatorSampler.WaterPositionInfo[_floaters.Length];
+    }
+
+    void OnEnable() {
+        for (int i = 0; i < _floaters.Length; i++) {
+            int iCopy = i;
+            // _callbacks[i] = info => OnWaterUpdate(_floaters[i], info);
+            _callbacks[i] = info => OnWaterUpdate(iCopy, info);
+            _sampler.Subscribe(_callbacks[i], transform.TransformPoint(_floaters[i].Offset));
+        }
+    }
+
+    void OnDisable() {
+        foreach (var callback in _callbacks) {
+            _sampler.Unsubscribe(callback);
+        }
+    }
+
+    void FixedUpdate() {
+        if (transform.hasChanged) {
+            for (int i = 0; i < _floaters.Length; i++) {
+                Floater floater = _floaters[i];
+                Vector3 currentPos = transform.TransformPoint(floater.Offset);
+                Vector3 predictedPos = currentPos + _rigidbody.linearVelocity * _sampler.GetSmoothedLatency();
+                _sampler.UpdatePosition(_callbacks[i], _positionPrediction ? predictedPos : currentPos);
+            }
+            transform.hasChanged = false;
+        }
+    }
+
+    // void OnWaterUpdate(Floater floater, WaterSimulatorSampler.WaterPositionInfo info) {
+    void OnWaterUpdate(int i, WaterSimulatorSampler.WaterPositionInfo info) {
+        _infos[i] = info;
+        // TODO
+    }
+
+    public void SetSimulatorSampler(WaterSimulatorSampler sampler) {
+        _sampler = sampler;
         // TODO implement special logic at runtime
+    }
+
+    public void RecomputeDensity() {
+        // TODO
+    }
+
+    WaterSimulatorSampler.WaterPositionInfo[] _infos;
+    void OnDrawGizmos() {
+        if (_infos == null) {
+            return;
+        }
+        for (int i = 0; i < _floaters.Length; i++) {
+            Gizmos.color = Color.red;
+            Vector3 floaterPos = transform.TransformPoint(_floaters[i].Offset);
+            Vector3 groundPos = floaterPos;
+            groundPos.y = _infos[i].GlobalGroundPos;
+            Vector3 surfacePos = groundPos;
+            surfacePos.y += _infos[i].Depth;
+            Gizmos.DrawLine(floaterPos, groundPos);
+            Gizmos.DrawSphere(groundPos, 1f);
+            Gizmos.color = Color.green;
+            Gizmos.DrawCube(surfacePos, Vector3.one);
+        }
     }
 
 #if false

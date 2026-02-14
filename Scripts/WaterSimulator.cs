@@ -133,21 +133,28 @@ public class WaterSimulator : MonoBehaviour {
         shader.SetBuffer(1, ShaderIDs.Data, _waterSimulator.GetSimulationData());
 
         shader.Dispatch(0, _resolution.x / KERNEL_SIZE, _resolution.y / KERNEL_SIZE, 1);
-
         shader.Dispatch(1, _resolution.x / KERNEL_SIZE, _resolution.y / KERNEL_SIZE, 1);
     }
 
-    void SetShaderSimSize(ComputeShader shader) {
+    public void SetShaderSimSize(ComputeShader shader) {
         shader.SetVector(ShaderIDs.Size, _size);
     }
-    void SetShaderSimResolution(ComputeShader shader) {
+    public void SetShaderSimResolution(ComputeShader shader) {
         shader.SetInts(ShaderIDs.Resolution, new int[] { _resolution.x, _resolution.y });
     }
-    void SetShaderSimStepSize(ComputeShader shader) {
+    public void SetShaderSimStepSize(ComputeShader shader) {
         shader.SetFloats(ShaderIDs.StepSize, new float[] { _size.x / (_resolution.x - 1), _size.z / (_resolution.y - 1) });
     }
-    void SetShaderSimStepSizeInv(ComputeShader shader) {
+    public void SetShaderSimStepSizeInv(ComputeShader shader) {
         shader.SetFloats(ShaderIDs.StepSizeInv, new float[] { (_resolution.x - 1) / _size.x, (_resolution.y - 1) / _size.z });
+    }
+
+    public ComputeBuffer GetSimulationData() {
+        return _waterSimulator.GetSimulationData();
+    }
+
+    public RenderTexture GetGroundTexture() {
+        return _groundDepthTexture;
     }
 
     void InitMaterial() {
@@ -221,8 +228,13 @@ public class WaterSimulator : MonoBehaviour {
     }
 
     Vector4 ConvertToManipulatorData(Vector3 worldPosition, float radius) {
-        Vector3 localPosition = transform.InverseTransformPoint(worldPosition) + 0.5f * _size;
+        Vector3 localPosition = GlobalToSimulationSpace(worldPosition);
         return new Vector4(localPosition.x, localPosition.y, localPosition.z, radius);
+    }
+
+    // SimulationSpace is [(0,0,0), _size]
+    public Vector3 GlobalToSimulationSpace(Vector3 worldPosition) {
+        return transform.InverseTransformPoint(worldPosition) + 0.5f * _size;
     }
 
     public void UpdateManipulator(WaterManipulator manipulator, Vector3 worldPosition, float radius) {
