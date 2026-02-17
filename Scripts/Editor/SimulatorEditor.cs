@@ -10,13 +10,10 @@ public class SimulatorEditor : ScriptlessEditor {
     bool _editingBox = false;
     Tool _lastTool;
 
-    bool _isInEditMode; // TODO
-
     Texture2D _editBoxIcon;
     
     void OnEnable() {
         _editBoxIcon = EditorGUIUtility.FindTexture("EditCollider");
-        _isInEditMode = Application.isEditor && !Application.isPlaying;
     }
 
     void OnDisable() {
@@ -24,13 +21,6 @@ public class SimulatorEditor : ScriptlessEditor {
             _editingBox = false;
             Tools.current = _lastTool;
         }
-    }
-
-    void OnDestroy() {
-        // if (_isInEditMode && target == null) {
-        //     // Calling CleanUp on null is intended. Not actually null, == is overwritten.
-        //     ((WaterSimulator)target).ComponentRemovedCleanUp();
-        // }
     }
 
     void OnSceneGUI() {

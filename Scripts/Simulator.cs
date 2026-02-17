@@ -41,7 +41,6 @@ public class Simulator : MonoBehaviour {
 #if UNITY_EDITOR
     [SerializeField, HideInInspector]
     bool _hideCustomComponents = true;
-    UnityEngine.Object[] _customComponents;
 #endif
 
     [SerializeField, HideInInspector]
@@ -107,10 +106,6 @@ public class Simulator : MonoBehaviour {
 
     void Dispatch() {
         _waterSimulator.Dispatch(_shaderTimeStep);
-    }
-
-    Vector3 Divide(Vector3 A, Vector3 B) {
-        return new Vector3(A.x / B.x, A.y / B.y, A.z / B.z);
     }
 
     void InitVertexAdjuster() {
@@ -261,6 +256,7 @@ public class Simulator : MonoBehaviour {
 #if UNITY_EDITOR
         if ((gameObject.layer & _groundLayer) != 0) {
             Debug.LogError($"The layer of the simulator ({LayerMask.LayerToName(gameObject.layer)}) should not be included in the LayerMask \"{ObjectNames.NicifyVariableName(nameof(_groundLayer))}\"");
+            enabled = false;
         }
 #endif
 
@@ -294,7 +290,6 @@ public class Simulator : MonoBehaviour {
         UpdateManipulationBuffer();
 
 #if UNITY_EDITOR
-        _customComponents = new UnityEngine.Object[] { _cameraHolder, _meshFilter };
         SetHideComponents(true);
 #endif
 
@@ -345,7 +340,6 @@ public class Simulator : MonoBehaviour {
         // TODO what if HDRP or build-in is used?
         cameraData.renderPostProcessing = false;
         cameraData.renderShadows = false;
-        // cameraData.SetRenderer(_depthRendererIndex);
     }
     
     void SetupGroundDepthTexture() {
@@ -421,10 +415,8 @@ public class Simulator : MonoBehaviour {
         HideFlags flags = hide
             ? HideFlags.HideInInspector | HideFlags.HideInHierarchy
             : HideFlags.None;
-        // TODO MeshFilter doesn't always respect hideFlags
-        foreach (var component in _customComponents) {
-            component.hideFlags = flags;
-        }
+
+        _cameraHolder.hideFlags = flags;
     }
 
     [ContextMenu("Toggle Components Visibility")]

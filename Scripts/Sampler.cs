@@ -25,8 +25,14 @@ public class Sampler : MonoBehaviour, IDisposable {
         Nearest, Bilinear
     }
 
+    enum UpdateMode {
+        Update, FixedUpdate
+    }
+
     [SerializeField]
     SamplingMode _samplingMode = SamplingMode.Bilinear;
+    [SerializeField]
+    UpdateMode _updateMode = UpdateMode.FixedUpdate;
 
     public Simulator Simulator { get; private set; }
 
@@ -63,8 +69,16 @@ public class Sampler : MonoBehaviour, IDisposable {
         Simulator.SetShaderSimSize(_sampleComputeShader);
     }
 
-    void FixedUpdate() { // TODO should I use FixedUpdate, Update or should both be possible?
-        Sample();
+    void FixedUpdate() {
+        if (_updateMode == UpdateMode.FixedUpdate) {
+            Sample();
+        }
+    }
+
+    void Update() {
+        if (_updateMode == UpdateMode.Update) {
+            Sample();
+        }
     }
 
     void OnDestroy() {
