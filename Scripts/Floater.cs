@@ -8,8 +8,8 @@ namespace JonasWischeropp.Unity.WaterSimulation {
 
 using PositionInfo = Sampler.PositionInfo;
 
-[AddComponentMenu(Simulator.SIM_MENU_GROUP + "Floater"),
-RequireComponent(typeof(Rigidbody))]
+[AddComponentMenu(Simulator.SIM_MENU_GROUP + "Water Floater")]
+[RequireComponent(typeof(Rigidbody))]
 [DefaultExecutionOrder(Simulator.EXECUTION_ORDER + 2)]
 public class Floater : MonoBehaviour {
     [Serializable]

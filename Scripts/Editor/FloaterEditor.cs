@@ -6,8 +6,8 @@ using static Floater;
 
 [CustomEditor(typeof(Floater)), CanEditMultipleObjects]
 public class FloaterEditor : ScriptlessEditor {
-    private bool _editing = false;
-    private Tool _lastTool;
+    bool _editing = false;
+    Tool _lastTool;
 
     protected virtual void OnSceneGUI() {
         if (!_editing) {
@@ -44,7 +44,7 @@ public class FloaterEditor : ScriptlessEditor {
         base.OnInspectorGUI();
     }
 
-    private void OnDisable() {
+    void OnDisable() {
         if (_editing) {
             _editing = false;
             Tools.current = _lastTool;

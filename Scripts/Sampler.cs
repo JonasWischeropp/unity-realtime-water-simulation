@@ -5,8 +5,8 @@ using UnityEngine.Rendering;
 
 namespace JonasWischeropp.Unity.WaterSimulation {
 
-[AddComponentMenu(Simulator.SIM_MENU_GROUP + "Sampler"),
-RequireComponent(typeof(Simulator))]
+[AddComponentMenu(Simulator.SIM_MENU_GROUP + "Water Sampler")]
+[RequireComponent(typeof(Simulator))]
 [DefaultExecutionOrder(Simulator.EXECUTION_ORDER + 1)]
 public class Sampler : MonoBehaviour, IDisposable {
     const int KERNEL_SIZE = 64;

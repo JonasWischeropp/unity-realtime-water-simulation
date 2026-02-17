@@ -5,7 +5,8 @@ using UnityEngine;
 
 namespace JonasWischeropp.Unity.WaterSimulation {
 
-[AddComponentMenu(Simulator.SIM_MENU_GROUP + "Manipulator")]
+[AddComponentMenu(Simulator.SIM_MENU_GROUP + "Water Manipulator")]
+[DisallowMultipleComponent]
 [DefaultExecutionOrder(Simulator.EXECUTION_ORDER + 1)]
 public class Manipulator : MonoBehaviour {
     [SerializeField] Simulator _simulator;
