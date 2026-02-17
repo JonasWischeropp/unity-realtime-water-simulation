@@ -1,6 +1,4 @@
-#if UNITY_EDITOR
 using System;
-using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
@@ -51,14 +49,14 @@ public class GameObjectCreationMenu {
         go.GetComponent<WaterSimulationFloater>().SetSimulatorSampler(GetClosestOfType<WaterSimulatorSampler>());
     }
 
-    static T GetClosestOfType<T>() where T : UnityEngine.Object {
+    static T GetClosestOfType<T>() where T : UnityEngine.Component {
         T[] objects = SceneView.FindObjectsByType<T>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         Vector3 spawnPosition = SpawnPosition();
 
         float minDistance = float.PositiveInfinity;
         T closest = null;
         foreach (T ob in objects) {
-            float distance = (spawnPosition - ob.GameObject().transform.position).sqrMagnitude;
+            float distance = (spawnPosition - ob.transform.position).sqrMagnitude;
             if (distance < minDistance) {
                 minDistance = distance;
                 closest = ob;
@@ -67,6 +65,5 @@ public class GameObjectCreationMenu {
         return closest;
     }
 }
-#endif
 
 } // namespace JonasWischeropp.Unity.WaterSimulation.Editor
