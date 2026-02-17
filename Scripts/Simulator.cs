@@ -172,7 +172,7 @@ public class Simulator : MonoBehaviour {
 
     void InitHeight() {
         _waterSimulator = _useSimple ? new SimpleWaterSimulator() : new ComplexWaterSimulator();
-        _waterSimulator.Init(_waterSimulator is SimpleWaterSimulator ? _simulationComputeShader : _complexSimulationComputeShader, _size, _resolution, _groundDepthTexture, _manipulationBuffer);
+        _waterSimulator.Init(this, _waterSimulator is SimpleWaterSimulator ? _simulationComputeShader : _complexSimulationComputeShader, _resolution, _groundDepthTexture, _manipulationBuffer);
         _waterSimulator.SetGravity(Gravity);
     }
 

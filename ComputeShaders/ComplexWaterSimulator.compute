@@ -32,6 +32,7 @@ RWStructuredBuffer<CellData> Cells;
 
 uint2 Resolution;
 float2 StepSize;
+float2 StepSizeInv;
 float3 Size;
 
 float DeltaTime;
@@ -119,12 +120,12 @@ void CalculateVs (uint3 id : SV_DispatchThreadID) { // TODO naming could be impr
         theta * (V_H - V_L),
         0.5 * (V_R - V_L),
         theta * (V_R - V_H)
-    ) / StepSize.x; // eq. 12
+    ) * StepSizeInv.x; // eq. 12
     float4 DV_y = minmod( // TODO refactor
         theta * (V_H - V_D),
         0.5 * (V_U - V_D),
         theta * (V_U - V_H)
-    ) / StepSize.y; // eq. 12
+    ) * StepSizeInv.y; // eq. 12
     
     float4 DV_x_s = 0.5 * StepSize.x * DV_x;
     float4 DV_y_s = 0.5 * StepSize.y * DV_y;
@@ -176,7 +177,7 @@ void CalculateVs (uint3 id : SV_DispatchThreadID) { // TODO naming could be impr
             theta * (b_H - b_L),
             0.5 * (b_R - b_L),
             theta * (b_R - b_H)
-        ) / StepSize.x; // eq. 24
+        ) * StepSizeInv.x; // eq. 24
         if (abs(DV_x.w) > abs(Db_x)) { // eq. 25
             DV_x.w = DV_x.x + Db_x; // eq. 26
             DV_x_s.w = 0.5 * StepSize.x * DV_x.w;
@@ -189,7 +190,7 @@ void CalculateVs (uint3 id : SV_DispatchThreadID) { // TODO naming could be impr
             theta * (b_H - b_D),
             0.5 * (b_U - b_D),
             theta * (b_U - b_H)
-        ) / StepSize.y; // eq. 24 modified
+        ) * StepSizeInv.y; // eq. 24 modified
         if (abs(DV_y.w) > abs(Db_y)) { // eq. 25 modified
             DV_y.w = DV_y.x + Db_y; // eq. 26 modified
             DV_y_s.w = 0.5 * StepSize.y * DV_y.w;
@@ -345,12 +346,12 @@ float3 R(uint2 coord) {
     float h_H = 0.25 * (h_s_LP + h_s_RM + h_s_DP + h_s_UM);
     float b_H = 0.25 * (bCN_s_L + bCN_s_R + bCN_s_D + bCN_s_U);
 
-    float4 S_LRDU = - Gravity / StepSize.xxyy * 0.5 * (h_H
+    float4 S_LRDU = - Gravity * StepSizeInv.xxyy * 0.5 * (h_H
         + float4(h_s_LP, h_s_RM, h_s_DP, h_s_UM))
         * float4(b_H - bCN_s_L, bCN_s_R - b_H, b_H - bCN_s_D, bCN_s_U - b_H); // eq. 38 modified
     float3 S_H = float3(0, S_LRDU.x + S_LRDU.y, S_LRDU.z + S_LRDU.w); // eq. 36, 37
 
-    return S_H - (F_R - F_L) / StepSize.x - (G_U - G_D) / StepSize.y; // eq. 46
+    return S_H - (F_R - F_L) * StepSizeInv.x - (G_U - G_D) * StepSizeInv.y; // eq. 46
 }
 
 // Expects W = (h, u, v)

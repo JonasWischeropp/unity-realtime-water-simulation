@@ -4,7 +4,7 @@ using UnityEngine;
 namespace JonasWischeropp.Unity.WaterSimulation {
 
 public interface IWaterSimulator {
-    public abstract void Init(ComputeShader simulationComputeShader, Vector3 size, Vector2Int resolution, Texture groundDepthTexture, ComputeBuffer manipulationBuffer);
+    public abstract void Init(Simulator simulator, ComputeShader simulationComputeShader, Vector2Int resolution, Texture groundDepthTexture, ComputeBuffer manipulationBuffer);
 
     public abstract void Dispatch(float deltaTime);
 

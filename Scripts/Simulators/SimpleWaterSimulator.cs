@@ -1,10 +1,10 @@
 using UnityEngine;
 using UnityEngine.Assertions;
 
-// TODO refactor shader ids
 namespace JonasWischeropp.Unity.WaterSimulation {
 
 public class SimpleWaterSimulator : IWaterSimulator {
+    Simulator _simulator;
     ComputeShader _simulationComputeShader;
 
     ComputeBuffer _simulationData0;
@@ -13,8 +13,10 @@ public class SimpleWaterSimulator : IWaterSimulator {
 
     Vector3Int _dispatchGroupSize;
 
-    public void Init(ComputeShader simulationComputeShader, Vector3 size, Vector2Int resolution, Texture groundDepthTexture, ComputeBuffer manipulationBuffer) {
-        _simulationComputeShader = simulationComputeShader; // TODO get reference without passing it as an argument
+    public void Init(Simulator simulator, ComputeShader simulationComputeShader, Vector2Int resolution, Texture groundDepthTexture, ComputeBuffer manipulationBuffer) {
+        _simulator = simulator;
+        _simulationComputeShader = simulationComputeShader;
+
         int bufferSize = resolution.x * resolution.y;
         _simulationData0 = new ComputeBuffer(bufferSize, 4 * 4);
         _simulationData1 = new ComputeBuffer(bufferSize, 4 * 4);
@@ -22,17 +24,17 @@ public class SimpleWaterSimulator : IWaterSimulator {
 
         for (int kernel = 0; kernel < 2; kernel++) {
             // Source and Target for initialization
-            _simulationComputeShader.SetBuffer(kernel, "Source", _simulationData0);
-            _simulationComputeShader.SetBuffer(kernel, "Target", _simulationData0);
-            _simulationComputeShader.SetBuffer(kernel, "Manipulation", manipulationBuffer);
-            _simulationComputeShader.SetTexture(kernel, "GroundHeight", groundDepthTexture);
+            _simulationComputeShader.SetBuffer(kernel, ShaderIDs.Source, _simulationData0);
+            _simulationComputeShader.SetBuffer(kernel, ShaderIDs.Target, _simulationData0);
+            _simulationComputeShader.SetBuffer(kernel, ShaderIDs.Manipulation, manipulationBuffer);
+            _simulationComputeShader.SetTexture(kernel, ShaderIDs.GroundHeight, groundDepthTexture);
         }
-        _simulationComputeShader.SetVector("Size", size);
-        _simulationComputeShader.SetFloats("StepSize", new float[] { size.x / (resolution.x - 1), size.z / (resolution.y - 1) });
-        _simulationComputeShader.SetFloats("StepSizeInv", new float[] { (resolution.x - 1) / size.x, (resolution.y - 1) / size.z });
-        _simulationComputeShader.SetInts("Resolution", new int[] { resolution.x, resolution.y });
+        _simulator.SetShaderSimSize(_simulationComputeShader);
+        _simulator.SetShaderSimStepSize(_simulationComputeShader);
+        _simulator.SetShaderSimStepSizeInv(_simulationComputeShader);
+        _simulator.SetShaderSimResolution(_simulationComputeShader);
 
-        _simulationComputeShader.SetFloat("Gravity", 9.81f);
+        SetGravity(9.81f);
 
         Assert.IsTrue(resolution.x % Simulator.KERNEL_SIZE == 0);
         Assert.IsTrue(resolution.y % Simulator.KERNEL_SIZE == 0);
@@ -43,9 +45,9 @@ public class SimpleWaterSimulator : IWaterSimulator {
     }
     
     public void Dispatch(float deltaTime) {
-        _simulationComputeShader.SetFloat("DeltaTime", deltaTime);
-        _simulationComputeShader.SetBuffer(0, "Source", _simulationData0IsLatest ? _simulationData0 : _simulationData1);
-        _simulationComputeShader.SetBuffer(0, "Target", _simulationData0IsLatest ? _simulationData1 : _simulationData0);
+        _simulationComputeShader.SetFloat(ShaderIDs.DeltaTime, deltaTime);
+        _simulationComputeShader.SetBuffer(0, ShaderIDs.Source, _simulationData0IsLatest ? _simulationData0 : _simulationData1);
+        _simulationComputeShader.SetBuffer(0, ShaderIDs.Target, _simulationData0IsLatest ? _simulationData1 : _simulationData0);
         _simulationComputeShader.Dispatch(0, _dispatchGroupSize.x, _dispatchGroupSize.y, _dispatchGroupSize.z);
         _simulationData0IsLatest = ! _simulationData0IsLatest;
     }
@@ -62,7 +64,7 @@ public class SimpleWaterSimulator : IWaterSimulator {
     }
 
     public void SetGravity(float gravity) {
-        _simulationComputeShader.SetFloat("Gravity", 9.81f);
+        _simulationComputeShader.SetFloat(ShaderIDs.Gravity, gravity);
     }
 }
 

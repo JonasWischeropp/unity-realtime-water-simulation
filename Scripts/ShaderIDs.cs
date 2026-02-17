@@ -8,6 +8,7 @@ public static class ShaderIDs {
 
     public static readonly int Data = Shader.PropertyToID("Data");
     public static readonly int GroundHeight = Shader.PropertyToID("GroundHeight");
+    public static readonly int Cells = Shader.PropertyToID("Cells");
 
     public static readonly int VertexBuffer = Shader.PropertyToID("VertexBuffer");
     public static readonly int IndexBuffer = Shader.PropertyToID("IndexBuffer");
@@ -23,6 +24,15 @@ public static class ShaderIDs {
 
     public static readonly int Positions = Shader.PropertyToID("Positions");
     public static readonly int SampledData = Shader.PropertyToID("SampledData");
+
+    public static readonly int Gravity = Shader.PropertyToID("Gravity");
+    public static readonly int DeltaTime = Shader.PropertyToID("DeltaTime");
+    public static readonly int ManningRoughness = Shader.PropertyToID("ManningRoughness");
+    public static readonly int MaxVelocity = Shader.PropertyToID("MaxVelocity");
+    public static readonly int FoamDissipation = Shader.PropertyToID("FoamDissipation");
+    public static readonly int FoamAirTrapMul = Shader.PropertyToID("FoamAirTrapMul");
+    public static readonly int FoamSteepMul = Shader.PropertyToID("FoamSteepMul");
+    public static readonly int FoamVanishing = Shader.PropertyToID("FoamVanishing");
 }
 
 public static class MaterialIDs {
