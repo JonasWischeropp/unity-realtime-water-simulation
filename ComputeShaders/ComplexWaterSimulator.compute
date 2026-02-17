@@ -1,11 +1,13 @@
-// TODO cleanup and document
-// Reference Paper:
-//     A fast second-order shallow water scheme on two-dimensional
-//     structured grids over abrupt topograhy
-//     Buttinger-Kreuzhuber, Horváth, Noelle, Blöschl, Waser
+/*
+This simulation is mostly based on the following article (changes were made):
+ Andreas Buttinger-Kreuzhuber, Zsolt Horváth, Sebastian Noelle, Günter Blöschl, Jürgen Waser,
+ A fast second-order shallow water scheme on two-dimensional structured grids over abrupt topography,
+ Advances in Water Resources, Volume 127, 2019, Pages 89-108, ISSN 0309-1708,
+ https://doi.org/10.1016/j.advwatres.2019.03.010.
+ The article is published under the CC BY license (https://creativecommons.org/licenses/by/4.0/).
+*/
 
-// Reference for Manning's n
-//     https://www.fsl.orst.edu/geowater/FX3/help/8_Hydraulic_Reference/Mannings_n_Tables.html
+// TODO cleanup and document
 
 #pragma kernel CSMain
 #pragma kernel CalculateVs;

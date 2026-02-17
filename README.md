@@ -2,19 +2,23 @@
 This Unity package implements an iterative shallow water equation solver to simulate water flow in realtime.
 
 > [!IMPORTANT]
-> WIP: Parts of the simulation and api might not be fully stable yet!
+> WIP: Parts of the simulation and API might not be fully stable yet!
 
 TODO: Insert demo video here
 
 ## Usage
 The package provides three main components:
-- WaterSimulator
-- WaterSimulatorManipulator
-- WaterSimulatorFloater
+| Component         | Function |
+|-|-|
+| Water Simulator   | simulates water in an area |
+| Water Manipulator | used to add/remove water |
+| Water Floater     | lets rigidbodys interact with the water |
+
+The [sample scene](#sample-scene) is probably the best documentation and should explain everything.
 <!-- TODO continue explanation -->
 
 ### Sample Scene
-For `SampleScene.unity` to work, the free asset pack [Rock and Boulders 2 by Manufactura K4](https://assetstore.unity.com/packages/3d/props/exterior/rock-and-boulders-2-6947) has to be imported into the project and converted to URP.
+For `SampleScene.unity` to work, the free asset pack [Rock and Boulders 2 by Manufactura K4](https://assetstore.unity.com/packages/3d/props/exterior/rock-and-boulders-2-6947) has to be imported and converted to URP.
 
 ## Setup
 Installation using the Package Manager:
@@ -24,14 +28,6 @@ Installation using the Package Manager:
 A specific [release](https://github.com/JonasWischeropp/unity-realtime-water-simulation/releases) version can be specified by appending `#<version>` (e.g. `...lation.git#0.0.0`).
 4. Press the `Add`-Button
 
-# TODO
-- asset vs. package? (what should be in the asset folder?)
-- check license of water normal texture
-- remove test files
-- write README
-- default values
-
-## Shader
-- "Default" refraction of water (at the moment not breaking at surface)
-- Shadow
-- Refraction always to the right
+## Credit
+- Large parts of the numeric calculations are based on "A fast second-order shallow water scheme on two-dimensional structured grids over abrupt topography" ([Buttinger-Kreuzhuber et al.](https://doi.org/10.1016/j.advwatres.2019.03.010.))
+- The water shader uses a lot of techniques from tutorials by [Ben Cloward](https://www.youtube.com/@BenCloward)
