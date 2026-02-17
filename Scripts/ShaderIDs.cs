@@ -25,4 +25,15 @@ public static class ShaderIDs {
     public static readonly int SampledData = Shader.PropertyToID("SampledData");
 }
 
+public static class MaterialIDs {
+    static string Prefix(string s) => $"JW_WaterSimulator_{s}";
+    static int PropertyWithPrefixToID(string s) => Shader.PropertyToID(Prefix(s));
+
+    public static readonly int Data = PropertyWithPrefixToID("Data");
+    public static readonly int Size = PropertyWithPrefixToID("Size");
+    public static readonly int StepSize = PropertyWithPrefixToID("StepSize");
+    public static readonly int StepSizeInv = PropertyWithPrefixToID("StepSizeInv");
+    public static readonly int Resolution = PropertyWithPrefixToID("Resolution");
+}
+
 } // namespace JonasWischeropp.Unity.WaterSimulation

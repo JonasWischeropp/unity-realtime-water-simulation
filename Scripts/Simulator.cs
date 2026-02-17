@@ -79,7 +79,7 @@ public class Simulator : MonoBehaviour {
             return;
         }
 
-        _materialPropertyBlock.SetBuffer("WaterSimulator_Data", _waterSimulator.GetSimulationData());
+        _materialPropertyBlock.SetBuffer(MaterialIDs.Data, _waterSimulator.GetSimulationData());
         _meshRenderer.SetPropertyBlock(_materialPropertyBlock);
 
         UpdateManipulationBuffer();
@@ -162,11 +162,11 @@ public class Simulator : MonoBehaviour {
 
     void InitMaterial() {
         _materialPropertyBlock = new MaterialPropertyBlock();
-        _materialPropertyBlock.SetVector("WaterSimulator_Size", _size);
-        _materialPropertyBlock.SetVector("WaterSimulator_Resolution", new Vector4(_resolution.x, _resolution.y));
-        _materialPropertyBlock.SetVector("WaterSimulator_StepSize", new Vector4(_size.x / (_resolution.x - 1), _size.z / (_resolution.y - 1)));
-        _materialPropertyBlock.SetVector("WaterSimulator_StepSizeInv", new Vector4((_resolution.x - 1) / _size.x, (_resolution.y - 1) / _size.z));
-        _materialPropertyBlock.SetBuffer("WaterSimulator_Data", _waterSimulator.GetSimulationData());
+        _materialPropertyBlock.SetVector(MaterialIDs.Size, _size);
+        _materialPropertyBlock.SetVector(MaterialIDs.Resolution, new Vector4(_resolution.x, _resolution.y));
+        _materialPropertyBlock.SetVector(MaterialIDs.StepSize, new Vector4(_size.x / (_resolution.x - 1), _size.z / (_resolution.y - 1)));
+        _materialPropertyBlock.SetVector(MaterialIDs.StepSizeInv, new Vector4((_resolution.x - 1) / _size.x, (_resolution.y - 1) / _size.z));
+        _materialPropertyBlock.SetBuffer(MaterialIDs.Data, _waterSimulator.GetSimulationData());
         _meshRenderer.SetPropertyBlock(_materialPropertyBlock);
     }
 

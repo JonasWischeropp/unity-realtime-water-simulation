@@ -1,4 +1,3 @@
-// TODO clean up
 #ifndef FLOW_NODE_INCLUDED
 #define FLOW_NODE_INCLUDED
 
@@ -41,20 +40,6 @@ void Flow_float(float time, float2 uv, float tiling, float2 velocity,
     weight1 = uvwA.z;
     uv2 = uvwB.xy;
     weight2 = uvwB.z;
-
-    // float finalHeightScale =
-    //     flow.z * _HeightScaleModulated + _HeightScale;
-    //
-    // float3 dhA =
-    //     UnpackDerivativeHeight(tex2D(_DerivHeightMap, uvwA.xy)) *
-    //     (uvwA.z * finalHeightScale);
-    // float3 dhB =
-    //     UnpackDerivativeHeight(tex2D(_DerivHeightMap, uvwB.xy)) *
-    //     (uvwB.z * finalHeightScale);
-    // o.Normal = normalize(float3(-(dhA.xy + dhB.xy), 1));
-
-    // fixed4 texA = tex2D(_MainTex, uvwA.xy) * uvwA.z;
-    // fixed4 texB = tex2D(_MainTex, uvwB.xy) * uvwB.z;
 }
 
 #endif // FLOW_NODE_INCLUDED
