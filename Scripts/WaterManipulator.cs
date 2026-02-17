@@ -50,26 +50,23 @@ public class WaterManipulator : MonoBehaviour {
     }
 
 #if UNITY_EDITOR
-    public void SetSimulator(WaterSimulator simulator) {
-        if (simulator == _simulator) {
+    public void SetSimulator(WaterSimulator newSimulator) {
+        if (newSimulator == _simulator) {
             return;
         }
 
         if (EditorApplication.isPlaying && enabled) {
             _simulator?.RemoveManipulator(this);
-            _simulator = simulator;
-            _simulator?.AddManipulator(this, GetPosition(), GetSize());
+            newSimulator?.AddManipulator(this, GetPosition(), GetSize());
         }
-        else {
-            _simulator = simulator;
-        }
+        _simulator = newSimulator;
     }
-#endif
 
     void OnDrawGizmosSelected() {
         Handles.color = Color.blue;
         Handles.DrawWireDisc(transform.position, transform.up, GetSize());
     }
+#endif
 }
 
 #if UNITY_EDITOR
