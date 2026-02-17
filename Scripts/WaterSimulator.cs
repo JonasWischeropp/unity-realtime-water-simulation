@@ -8,6 +8,8 @@ using UnityEngine;
 
 using URPCameraData = UnityEngine.Rendering.Universal.UniversalAdditionalCameraData;
 
+namespace JonasWischeropp.Unity.WaterSimulation {
+
 [AddComponentMenu("WaterSimulation/Water Simulator"),
 RequireComponent(typeof(MeshRenderer), typeof(MeshFilter))]
 [DefaultExecutionOrder(EXECUTION_ORDER)]
@@ -443,3 +445,5 @@ public class WaterSimulator : MonoBehaviour {
     }
 #endif
 }
+
+} // namespace JonasWischeropp.Unity.WaterSimulation

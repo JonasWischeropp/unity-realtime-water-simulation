@@ -2,6 +2,8 @@ using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
+namespace JonasWischeropp.Unity.WaterSimulation.Editor {
+
 [CustomEditor(typeof(WaterSimulator))]
 public class WaterSimulatorEditor : ScriptlessEditor {
     BoxBoundsHandle _boxHandle = new BoxBoundsHandle();
@@ -75,3 +77,5 @@ public class WaterSimulatorEditor : ScriptlessEditor {
         Tools.current = _lastTool;
     }
 }
+
+} // namespace JonasWischeropp.Unity.WaterSimulation.Editor

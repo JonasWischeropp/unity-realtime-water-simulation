@@ -1,14 +1,16 @@
 using System;
 
+namespace JonasWischeropp.Unity.WaterSimulation {
+
 // Not generic because older C# versions wouldn't support it. 
 public class SmoothedMeasurement {
-    private float[] _measurements;
-    private float _sum;
+    float[] _measurements;
+    float _sum;
 
-    private int _currentIndex;
-    private int _fillAmount;
+    int _currentIndex;
+    int _fillAmount;
     
-    private readonly uint _sampleCount;
+    readonly uint _sampleCount;
     
     public SmoothedMeasurement(uint sampleCount) {
         _sampleCount = sampleCount;
@@ -42,3 +44,5 @@ public class SmoothedMeasurement {
         _fillAmount = 0;
     }
 }
+
+} // namespace JonasWischeropp.Unity.WaterSimulation

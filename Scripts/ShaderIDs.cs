@@ -1,5 +1,7 @@
 using UnityEngine;
 
+namespace JonasWischeropp.Unity.WaterSimulation {
+
 public static class ShaderIDs {
     public static readonly int Source = Shader.PropertyToID("Source");
     public static readonly int Target = Shader.PropertyToID("Target");
@@ -22,3 +24,5 @@ public static class ShaderIDs {
     public static readonly int Positions = Shader.PropertyToID("Positions");
     public static readonly int SampledData = Shader.PropertyToID("SampledData");
 }
+
+} // namespace JonasWischeropp.Unity.WaterSimulation

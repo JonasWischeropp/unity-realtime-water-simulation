@@ -3,6 +3,8 @@ using UnityEditor;
 #endif
 using UnityEngine;
 
+namespace JonasWischeropp.Unity.WaterSimulation {
+
 [AddComponentMenu("WaterSimulator/Water Manipulator")]
 [DefaultExecutionOrder(WaterSimulator.EXECUTION_ORDER + 1)]
 public class WaterManipulator : MonoBehaviour {
@@ -69,6 +71,7 @@ public class WaterManipulator : MonoBehaviour {
 #endif
 }
 
+namespace Editor {
 #if UNITY_EDITOR
 [CustomEditor(typeof(WaterManipulator))]
 public class WaterManipulatorEditor : ScriptlessEditor {
@@ -79,3 +82,6 @@ public class WaterManipulatorEditor : ScriptlessEditor {
     }
 }
 #endif
+} // Editor
+
+} // namespace JonasWischeropp.Unity.WaterSimulation

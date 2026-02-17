@@ -3,6 +3,8 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 
+namespace JonasWischeropp.Unity.WaterSimulation {
+
 [RequireComponent(typeof(WaterSimulator))]
 [DefaultExecutionOrder(WaterSimulator.EXECUTION_ORDER + 1)]
 public class WaterSimulatorSampler : MonoBehaviour, IDisposable {
@@ -152,3 +154,5 @@ public class WaterSimulatorSampler : MonoBehaviour, IDisposable {
         _sampleComputeShader.SetTexture(BILINEAR_SAMPLE_KERNEL, ShaderIDs.GroundHeight, texture);
     }
 }
+
+} // namespace JonasWischeropp.Unity.WaterSimulation

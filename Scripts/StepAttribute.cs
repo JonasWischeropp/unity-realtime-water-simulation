@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEditor;
 using System;
 
+namespace JonasWischeropp.Unity.WaterSimulation {
+
 public class StepAttribute : PropertyAttribute {
     readonly int _stepSize;
     readonly int _min;
@@ -44,6 +46,7 @@ public class StepAttribute : PropertyAttribute {
     }
 }
 
+namespace Editor {
 #if UNITY_EDITOR
 [CustomPropertyDrawer(typeof(StepAttribute))]
 public class StepDrawer : PropertyDrawer {
@@ -79,3 +82,6 @@ public class StepDrawer : PropertyDrawer {
     }
 }
 #endif
+} // namespace Editor
+
+} // namespace JonasWischeropp.Unity.WaterSimulation

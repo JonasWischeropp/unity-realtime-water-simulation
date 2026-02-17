@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.Assertions;
 
 // TODO refactor shader ids
+namespace JonasWischeropp.Unity.WaterSimulation {
+
 public class SimpleWaterSimulator : IWaterSimulator {
     ComputeShader _simulationComputeShader;
 
@@ -63,3 +65,5 @@ public class SimpleWaterSimulator : IWaterSimulator {
         _simulationComputeShader.SetFloat("Gravity", 9.81f);
     }
 }
+
+} // namespace JonasWischeropp.Unity.WaterSimulation

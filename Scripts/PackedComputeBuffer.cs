@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+namespace JonasWischeropp.Unity.WaterSimulation {
+
 public class PackedComputeBuffer<Key, Value> : IDisposable, IEnumerable<(Key, Value)> where Value : notnull {
     Dictionary<Key, int> _keyToIndex = new Dictionary<Key, int>();
     Key[] _indexToKey;
@@ -148,3 +150,5 @@ public class PackedComputeBuffer<Key, Value> : IDisposable, IEnumerable<(Key, Va
         return GetEnumerator();
     }
 }
+
+} // namespace JonasWischeropp.Unity.WaterSimulation

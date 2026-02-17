@@ -1,5 +1,7 @@
 using UnityEngine;
 
+namespace JonasWischeropp.Unity.WaterSimulation {
+
 public static class VolumeCalculator {
     public static float Volume(SphereCollider collider) {
         return SphereVolume(collider.radius);
@@ -58,3 +60,5 @@ public static class VolumeCalculator {
         return x * x;
     }
 }
+
+} // namespace JonasWischeropp.Unity.WaterSimulation

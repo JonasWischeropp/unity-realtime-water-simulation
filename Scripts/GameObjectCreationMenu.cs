@@ -4,6 +4,8 @@ using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
+namespace JonasWischeropp.Unity.WaterSimulation.Editor {
+
 public class GameObjectCreationMenu {
     const string PATH = "GameObject/WaterSimulation/";
     const float MAX_SPAWN_DISTANCE = 100f;
@@ -66,3 +68,5 @@ public class GameObjectCreationMenu {
     }
 }
 #endif
+
+} // namespace JonasWischeropp.Unity.WaterSimulation.Editor
