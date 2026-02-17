@@ -71,17 +71,4 @@ public class WaterManipulator : MonoBehaviour {
 #endif
 }
 
-namespace Editor {
-#if UNITY_EDITOR
-[CustomEditor(typeof(WaterManipulator))]
-public class WaterManipulatorEditor : ScriptlessEditor {
-    public override void OnInspectorGUI() {
-        using (new EditorGUI.DisabledGroupScope(EditorApplication.isPlaying)) {
-            base.OnInspectorGUI();
-        }
-    }
-}
-#endif
-} // Editor
-
 } // namespace JonasWischeropp.Unity.WaterSimulation
