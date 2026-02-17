@@ -23,6 +23,7 @@ public class FloaterEditor : ScriptlessEditor {
             Vector3 newPos =
                 Handles.PositionHandle(t.transform.TransformPoint(floater.Offset), handleRotation);
             if (EditorGUI.EndChangeCheck()) {
+                Undo.RecordObject(t, "Move FloaterPoint");
                 floater.Offset = t.transform.InverseTransformPoint(newPos);
             }
         }
