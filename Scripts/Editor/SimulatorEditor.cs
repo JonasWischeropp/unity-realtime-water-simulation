@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace JonasWischeropp.Unity.WaterSimulation.Editor {
 
-[CustomEditor(typeof(Simulator))]
+[CustomEditor(typeof(Simulator)), CanEditMultipleObjects]
 public class SimulatorEditor : ScriptlessEditor {
     BoxBoundsHandle _boxHandle = new BoxBoundsHandle();
     bool _editingBox = false;

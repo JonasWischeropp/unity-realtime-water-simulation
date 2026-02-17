@@ -4,7 +4,7 @@ using UnityEditor;
 namespace JonasWischeropp.Unity.WaterSimulation.Editor {
 using static Floater;
 
-[CustomEditor(typeof(Floater))]
+[CustomEditor(typeof(Floater)), CanEditMultipleObjects]
 public class FloaterEditor : ScriptlessEditor {
     private bool _editing = false;
     private Tool _lastTool;
