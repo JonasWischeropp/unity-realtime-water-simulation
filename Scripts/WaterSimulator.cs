@@ -31,8 +31,8 @@ public class WaterSimulator : MonoBehaviour {
 
     RenderTexture _groundDepthTexture;
 
-    [SerializeField]
-    float _gravity = 9.81f;
+    [field: SerializeField]
+    public float Gravity {get; private set; } = 9.81f;
     
 #if UNITY_EDITOR
     Vector3 _oldSize;
@@ -170,7 +170,7 @@ public class WaterSimulator : MonoBehaviour {
     void InitHeight() {
         _waterSimulator = _useSimple ? new SimpleWaterSimulator() : new ComplexWaterSimulator();
         _waterSimulator.Init(_waterSimulator is SimpleWaterSimulator ? _simulationComputeShader : _complexSimulationComputeShader, _size, _resolution, _groundDepthTexture, _manipulationBuffer);
-        _waterSimulator.SetGravity(_gravity);
+        _waterSimulator.SetGravity(Gravity);
     }
 
     void InitQuadDiagonalSwapper() {
@@ -435,7 +435,7 @@ public class WaterSimulator : MonoBehaviour {
     }
 
     void OnValidate() {
-        _waterSimulator?.SetGravity(_gravity);
+        _waterSimulator?.SetGravity(Gravity);
 
         if (_groundDepthCamera) {
             _groundDepthCamera.cullingMask = _groundLayer;

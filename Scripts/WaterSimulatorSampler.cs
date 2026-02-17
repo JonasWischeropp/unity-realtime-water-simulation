@@ -25,7 +25,7 @@ public class WaterSimulatorSampler : MonoBehaviour, IDisposable {
     [SerializeField]
     SamplingMode _samplingMode = SamplingMode.Bilinear;
 
-    WaterSimulator _simulator;
+    public WaterSimulator Simulator { get; private set; }
 
     [SerializeField, HideInInspector]
     ComputeShader _sampleComputeShader;
@@ -39,7 +39,7 @@ public class WaterSimulatorSampler : MonoBehaviour, IDisposable {
     SmoothedMeasurement _smoothedLatency = new SmoothedMeasurement(10);
 
     void Awake() {
-        _simulator = GetComponent<WaterSimulator>();
+        Simulator = GetComponent<WaterSimulator>();
 
         _resultBuffer = new ComputeBuffer(KERNEL_SIZE, RESULT_BUFFER_STRIDE);
         _pointsBuffer = new PackedComputeBuffer<Action<WaterPositionInfo>, Vector2>(KERNEL_SIZE, POINTS_BUFFER_STRIDE);
@@ -54,10 +54,10 @@ public class WaterSimulatorSampler : MonoBehaviour, IDisposable {
 
         BindBuffer(ShaderIDs.Positions, _pointsBuffer.Buffer);
         BindBuffer(ShaderIDs.SampledData, _resultBuffer);
-        BindBuffer(ShaderIDs.Data, _simulator.GetSimulationData());
-        BindTexture(ShaderIDs.GroundHeight, _simulator.GetGroundTexture());
-        _simulator.SetShaderSimResolution(_sampleComputeShader);
-        _simulator.SetShaderSimSize(_sampleComputeShader);
+        BindBuffer(ShaderIDs.Data, Simulator.GetSimulationData());
+        BindTexture(ShaderIDs.GroundHeight, Simulator.GetGroundTexture());
+        Simulator.SetShaderSimResolution(_sampleComputeShader);
+        Simulator.SetShaderSimSize(_sampleComputeShader);
     }
 
     void FixedUpdate() { // TODO should I use FixedUpdate, Update or should both be possible?
@@ -96,7 +96,7 @@ public class WaterSimulatorSampler : MonoBehaviour, IDisposable {
     }
 
     Vector2 ConvertToBufferPositionValue(Vector3 position) {
-        Vector3 simPos = _simulator.GlobalToSimulationSpace(position);
+        Vector3 simPos = Simulator.GlobalToSimulationSpace(position);
         return new Vector2(simPos.x, simPos.z);
     }
 
@@ -106,7 +106,7 @@ public class WaterSimulatorSampler : MonoBehaviour, IDisposable {
         }
 
         _pointsBuffer.UpdateBuffer();
-        BindBuffer(ShaderIDs.Data, _simulator.GetSimulationData());
+        BindBuffer(ShaderIDs.Data, Simulator.GetSimulationData());
 
         float timeOfRequest = Time.time;
         Action<WaterPositionInfo>[] currentMapping
@@ -115,7 +115,7 @@ public class WaterSimulatorSampler : MonoBehaviour, IDisposable {
         _sampleComputeShader.Dispatch(GetActiveKernel(), (_pointsBuffer.Count + KERNEL_SIZE - 1) / KERNEL_SIZE, 1, 1);
 
         AsyncGPUReadback.Request(_resultBuffer, request => {
-            if (_simulator == null) {
+            if (Simulator == null) {
                 return;
             }
 
@@ -127,7 +127,7 @@ public class WaterSimulatorSampler : MonoBehaviour, IDisposable {
             for (int i = 0; i < currentMapping.Length; i++) {
                 WaterPositionInfo posInfo = positionInfos[i];
                 // Assuming that rotations are not allowed around the x- and z-axis
-                posInfo.GlobalGroundPos += _simulator.GetCenter().y - 0.5f * _simulator.GetSize().y;
+                posInfo.GlobalGroundPos += Simulator.GetCenter().y - 0.5f * Simulator.GetSize().y;
                 currentMapping[i].Invoke(posInfo);
             }
             OnAfterCallback?.Invoke();

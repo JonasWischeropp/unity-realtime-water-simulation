@@ -1,5 +1,9 @@
 using System;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
+using WaterPositionInfo = WaterSimulatorSampler.WaterPositionInfo;
 
 [AddComponentMenu("WaterSimulator/Floater")]
 [RequireComponent(typeof(Rigidbody))]
@@ -19,26 +23,44 @@ public class WaterSimulationFloater : MonoBehaviour {
     [SerializeField]
     Floater[] _floaters = new Floater[]{new Floater()};
 
-    Rigidbody _rigidbody;
-
-    [SerializeField]
-    float _density = 0f;
-
     [SerializeField]
     bool _positionPrediction = true;
 
-    Action<WaterSimulatorSampler.WaterPositionInfo>[] _callbacks;
+    [Header("Physic Settings")]
+    [Tooltip("With a value greater 1 it will float and with a value smaller 1 it will sink")]
+    [SerializeField]
+    float _buoyancyAmount = 3f; // TODO maybe use density instead?
+    [Header("Regular Damping")]
+    [SerializeField] 
+    float _linearDamping = 0f;
+    [SerializeField] 
+    float _angularDamping = 0.05f;
+    [Header("Water Damping")]
+    [SerializeField] 
+    float _underWaterLinearDamping = 4f;
+    [SerializeField] 
+    float _underWaterAngularDamping = 0.8f;
+
+    Rigidbody _rigidbody;
+
+    Action<WaterPositionInfo>[] _callbacks;
+    WaterPositionInfo[] _infos;
 
     void Awake() {
+        if (_sampler == null) {
+            Debug.LogError("Sampler is not assigned", this);
+            enabled = false;
+            return;
+        }
+
         _rigidbody = GetComponent<Rigidbody>();
-        _callbacks = new Action<WaterSimulatorSampler.WaterPositionInfo>[_floaters.Length];
-        _infos = new WaterSimulatorSampler.WaterPositionInfo[_floaters.Length];
+        _callbacks = new Action<WaterPositionInfo>[_floaters.Length];
+        _infos = new WaterPositionInfo[_floaters.Length];
     }
 
     void OnEnable() {
         for (int i = 0; i < _floaters.Length; i++) {
             int iCopy = i;
-            // _callbacks[i] = info => OnWaterUpdate(_floaters[i], info);
             _callbacks[i] = info => OnWaterUpdate(iCopy, info);
             _sampler.Subscribe(_callbacks[i], transform.TransformPoint(_floaters[i].Offset));
         }
@@ -51,167 +73,84 @@ public class WaterSimulationFloater : MonoBehaviour {
     }
 
     void FixedUpdate() {
-        if (transform.hasChanged) {
-            for (int i = 0; i < _floaters.Length; i++) {
-                Floater floater = _floaters[i];
-                Vector3 currentPos = transform.TransformPoint(floater.Offset);
+        float submergeTotal = 0f;
+
+        for (int i = 0; i < _floaters.Length; i++) {
+            Floater floater = _floaters[i];
+            WaterPositionInfo info = _infos[i];
+
+            Vector3 currentPos = transform.TransformPoint(floater.Offset);
+
+            // Apply physics
+            if (currentPos.y >= info.GlobalGroundPos && info.Depth > 0f) {
+                float surfacePos = info.GlobalGroundPos + info.Depth;
+                float submergeAmount = Mathf.Clamp01((surfacePos - currentPos.y + floater.Size) / (2f * floater.Size));
+                submergeTotal += submergeAmount;
+                if (submergeAmount != 0.0) {
+                    // TODO currently the rotation of simulator is not considered (probably also in manipulator)
+                    Vector3 velocityForce = new Vector3(info.Velocity.x, 0f, info.Velocity.y) * _rigidbody.mass;
+                    Vector3 buoyancyForce = new Vector3(0f, _sampler.Simulator.Gravity * _buoyancyAmount, 0f);
+                    _rigidbody.AddForceAtPosition((velocityForce + buoyancyForce) * submergeAmount / _floaters.Length, currentPos, ForceMode.Acceleration);
+                }
+            }
+
+            // Update positions
+            if (transform.hasChanged) {
                 Vector3 predictedPos = currentPos + _rigidbody.linearVelocity * _sampler.GetSmoothedLatency();
                 _sampler.UpdatePosition(_callbacks[i], _positionPrediction ? predictedPos : currentPos);
             }
-            transform.hasChanged = false;
         }
+        transform.hasChanged = false;
+
+        SetDrag(submergeTotal / _floaters.Length);
     }
 
-    // void OnWaterUpdate(Floater floater, WaterSimulatorSampler.WaterPositionInfo info) {
-    void OnWaterUpdate(int i, WaterSimulatorSampler.WaterPositionInfo info) {
+    void SetDrag(float value) {
+        _rigidbody.linearDamping = Mathf.Lerp(_linearDamping, _underWaterLinearDamping, value);
+        _rigidbody.angularDamping = Mathf.Lerp(_angularDamping, _underWaterAngularDamping, value);
+    }
+
+    void OnWaterUpdate(int i, WaterPositionInfo info) {
         _infos[i] = info;
-        // TODO
     }
 
-    public void SetSimulatorSampler(WaterSimulatorSampler sampler) {
-        _sampler = sampler;
-        // TODO implement special logic at runtime
+#if UNITY_EDITOR
+    public void SetSimulatorSampler(WaterSimulatorSampler newSampler) {
+        if (_sampler == newSampler) {
+            return;
+        }
+
+        if (EditorApplication.isPlaying && enabled) {
+            for (int i = 0; i < _floaters.Length; i++) {
+                _sampler.Unsubscribe(_callbacks[i]);
+                newSampler?.Subscribe(_callbacks[i], transform.TransformPoint(_floaters[i].Offset));
+            }
+        }
+        _sampler = newSampler;
     }
 
-    public void RecomputeDensity() {
-        // TODO
-    }
-
-    WaterSimulatorSampler.WaterPositionInfo[] _infos;
-    void OnDrawGizmos() {
+    void OnDrawGizmosSelected() {
+        foreach (Floater floater in _floaters) {
+            Gizmos.DrawSphere(transform.TransformPoint(floater.Offset), 0.5f * floater.Size);
+        }
+        
         if (_infos == null) {
             return;
         }
+
         for (int i = 0; i < _floaters.Length; i++) {
-            Gizmos.color = Color.red;
             Vector3 floaterPos = transform.TransformPoint(_floaters[i].Offset);
             Vector3 groundPos = floaterPos;
             groundPos.y = _infos[i].GlobalGroundPos;
             Vector3 surfacePos = groundPos;
             surfacePos.y += _infos[i].Depth;
-            Gizmos.DrawLine(floaterPos, groundPos);
-            Gizmos.DrawSphere(groundPos, 1f);
             Gizmos.color = Color.green;
-            Gizmos.DrawCube(surfacePos, Vector3.one);
+            Gizmos.DrawLine(floaterPos, groundPos);
+            Gizmos.DrawSphere(surfacePos, 0.5f);
+            Gizmos.color = Color.red;
+            Gizmos.DrawCube(groundPos, 0.5f * Vector3.one);
         }
     }
-
-#if false
-    [Serializable]
-    public class Floater {
-        [SerializeField]
-        public Vector3 offset = Vector3.zero;
-        [SerializeField]
-        public float size = 1f;
-    }
-    [SerializeField]
-    public Floater[] floaters = new Floater[0];
-
-    [SerializeField]
-    private WaterSimulator simulator;
-    
-    [Header("Physic Settings")]
-    [Tooltip("With a value greater 1 it will float and with a value smaller 1 it will sink")]
-    [SerializeField]
-    private float buoyancyAmount = 1f;
-    [Header("Regular Drag")]
-    [SerializeField] 
-    private float drag;
-    [SerializeField] 
-    private float angularDrag;
-    [Header("Water Drag")]
-    [SerializeField] 
-    private float underWaterDrag;
-    [SerializeField] 
-    private float underWaterAngularDrag;
-
-    private Rigidbody _rigidbody;
-
-    private Action<WaterSimulator.WaterSimulationSampler.WaterPositionInfo>[] _callbacks;
-    
-    private float _submergeAmountTotal = 0f;
-
-    private void Awake() {
-        _rigidbody = GetComponent<Rigidbody>();
-        _callbacks = new Action<WaterSimulator.WaterSimulationSampler.WaterPositionInfo>[floaters.Length];
-    }
-    
-#if UNITY_EDITOR
-    private int _oldFloaterCount;
-    private void OnValidate() {
-        _oldFloaterCount = floaters.Length;
-        if (Application.isPlaying && _oldFloaterCount != floaters.Length) {
-            Debug.LogError("Changing the size of the floaters array at runtime is currently not supported");
-            _oldFloaterCount = floaters.Length; // Only trigger once per change
-        }
-    }
-#endif
-    
-    private void OnEnable() {
-        for (int i = 0; i < floaters.Length; i++) {
-            var floater = floaters[i];
-            _callbacks[i] = info => OnWaterUpdate(floater, info);
-            simulator.Sampler.Subscribe(_callbacks[i], transform.TransformPoint(floater.offset));
-        }
-        simulator.Sampler.OnBeforeCallback += OnBeforeWaterUpdate;
-        simulator.Sampler.OnAfterCallback += OnAfterWaterUpdate;
-    }
-
-    private void OnDisable() {
-        foreach (var callback in _callbacks)
-            simulator.Sampler.Unsubscribe(callback);
-        simulator.Sampler.OnBeforeCallback -= OnBeforeWaterUpdate;
-        simulator.Sampler.OnAfterCallback -= OnAfterWaterUpdate;
-    }
-
-    private void OnBeforeWaterUpdate() {
-        _submergeAmountTotal = 0f;
-    }
-    private void OnAfterWaterUpdate() {
-        SetDrag(_submergeAmountTotal / floaters.Length);
-    }
-    
-    private void OnWaterUpdate(Floater floater, WaterSimulator.WaterSimulationSampler.WaterPositionInfo info) {
-        Vector3 position = transform.TransformPoint(floater.offset);
-        if (position.y < info.globalGroundPos)
-            return;
-        if (info.depth <= 0f)
-            return;
-        
-        float surfacePos = info.globalGroundPos + info.depth;
-        float submergeAmount = Mathf.Clamp01((surfacePos - position.y + floater.size) / (2f * floater.size));
-        _submergeAmountTotal += submergeAmount;
-        if (submergeAmount != 0.0) {
-            Vector3 velocityForce = new Vector3(info.velocity.x, 0f, info.velocity.y) * _rigidbody.mass;
-            Vector3 buoyancyForce = new Vector3(0f, simulator.Gravity * submergeAmount * buoyancyAmount / floaters.Length, 0f);
-            _rigidbody.AddForceAtPosition(velocityForce + buoyancyForce, position, ForceMode.Acceleration);
-        }
-    }
-
-    private void FixedUpdate() {
-        if (transform.hasChanged) {
-            for (int i = 0; i < floaters.Length; i++) {
-                var floater = floaters[i];
-                Vector3 currentPos = transform.TransformPoint(floater.offset);
-                Vector3 predictedPos = currentPos + _rigidbody.velocity * simulator.Sampler.SmoothedLatency();
-                simulator.Sampler.UpdateValue(_callbacks[i], predictedPos);
-            }
-            transform.hasChanged = false;
-        }
-    }
-    
-    private void SetDrag(float value) {
-        _rigidbody.drag = Mathf.Lerp(drag, underWaterDrag, value);
-        _rigidbody.angularDrag = Mathf.Lerp(angularDrag, underWaterAngularDrag, value);
-    }
-    
-    private void OnDrawGizmosSelected() {
-        Gizmos.color = Color.green;
-        foreach (Floater floater in floaters) {
-            Gizmos.DrawSphere(transform.TransformPoint(floater.offset), floater.size);
-        }
-    }
-}
 
 [CustomEditor(typeof(WaterSimulationFloater))]
 public class WaterSimulationFloaterEditor : ScriptlessEditor {
@@ -219,19 +158,20 @@ public class WaterSimulationFloaterEditor : ScriptlessEditor {
     private Tool _lastTool;
 
     protected virtual void OnSceneGUI() {
-        if (!_editing)
+        if (!_editing) {
             return;
+        }
         var t = (WaterSimulationFloater)target;
 
-        foreach (WaterSimulationFloater.Floater floater in t.floaters) {
+        foreach (Floater floater in t._floaters) {
             EditorGUI.BeginChangeCheck();
-            Quaternion handleRotation =Tools.pivotRotation == PivotRotation.Local
+            Quaternion handleRotation = Tools.pivotRotation == PivotRotation.Local
                 ? t.transform.rotation
                 : Quaternion.identity;
             Vector3 newPos =
-                Handles.PositionHandle(t.transform.TransformPoint(floater.offset), handleRotation);
+                Handles.PositionHandle(t.transform.TransformPoint(floater.Offset), handleRotation);
             if (EditorGUI.EndChangeCheck()) {
-                floater.offset = t.transform.InverseTransformPoint(newPos);
+                floater.Offset = t.transform.InverseTransformPoint(newPos);
             }
         }
     }
@@ -248,7 +188,7 @@ public class WaterSimulationFloaterEditor : ScriptlessEditor {
                 Tools.current = _lastTool;
             }
         }
-        DrawScriptlessDefaultInspector();
+        base.OnInspectorGUI();
     }
 
     private void OnDisable() {
@@ -257,5 +197,6 @@ public class WaterSimulationFloaterEditor : ScriptlessEditor {
             Tools.current = _lastTool;
         }
     }
-#endif // false
+}
+#endif
 }
