@@ -10,11 +10,12 @@ using URPCameraData = UnityEngine.Rendering.Universal.UniversalAdditionalCameraD
 
 namespace JonasWischeropp.Unity.WaterSimulation {
 
-[AddComponentMenu("WaterSimulation/Water Simulator"),
+[AddComponentMenu(SIM_MENU_GROUP + "Simulator"),
 RequireComponent(typeof(MeshRenderer), typeof(MeshFilter))]
 [DefaultExecutionOrder(EXECUTION_ORDER)]
-public class WaterSimulator : MonoBehaviour {
+public class Simulator : MonoBehaviour {
     public const int EXECUTION_ORDER = 100;
+    public const string SIM_MENU_GROUP = "Water Simulation/";
     public readonly static Color GIZMO_COLOR = Color.green;
     public const int KERNEL_SIZE = 8;
 
@@ -37,7 +38,6 @@ public class WaterSimulator : MonoBehaviour {
     public float Gravity {get; private set; } = 9.81f;
     
 #if UNITY_EDITOR
-    Vector3 _oldSize;
     [SerializeField, HideInInspector]
     bool _hideCustomComponents = true;
     UnityEngine.Object[] _customComponents;
@@ -51,7 +51,7 @@ public class WaterSimulator : MonoBehaviour {
     [SerializeField, HideInInspector]
     ComputeShader _manipulatorBakerShader;
     ComputeBuffer _manipulationBuffer;
-    PackedComputeBuffer<WaterManipulator, Vector4> _manipulators;
+    PackedComputeBuffer<Manipulator, Vector4> _manipulators;
 
     [SerializeField, HideInInspector]
     ComputeShader _quadDiagonalSwapperShader;
@@ -239,15 +239,15 @@ public class WaterSimulator : MonoBehaviour {
         return transform.InverseTransformPoint(worldPosition) + 0.5f * _size;
     }
 
-    public void UpdateManipulator(WaterManipulator manipulator, Vector3 worldPosition, float radius) {
+    public void UpdateManipulator(Manipulator manipulator, Vector3 worldPosition, float radius) {
         _manipulators.SetValue(manipulator, ConvertToManipulatorData(worldPosition, radius));
     }
 
-    public void AddManipulator(WaterManipulator manipulator, Vector3 worldPosition, float radius) {
+    public void AddManipulator(Manipulator manipulator, Vector3 worldPosition, float radius) {
         _manipulators.Add(manipulator, ConvertToManipulatorData(worldPosition, radius));
     }
 
-    public void RemoveManipulator(WaterManipulator manipulator) {
+    public void RemoveManipulator(Manipulator manipulator) {
         _manipulators.Remove(manipulator);
     }
 
@@ -274,7 +274,7 @@ public class WaterSimulator : MonoBehaviour {
 
         _manipulationBuffer = new ComputeBuffer(size, 4);
         _manipulationBuffer.SetData(Enumerable.Repeat(-1f, size).ToArray());
-        _manipulators = new PackedComputeBuffer<WaterManipulator, Vector4>(8, 4);
+        _manipulators = new PackedComputeBuffer<Manipulator, Vector4>(8, 4);
 
         _meshFilter.mesh = CreateMesh(_resolution, _size);
         _meshFilter.mesh.indexBufferTarget |= GraphicsBuffer.Target.Raw;

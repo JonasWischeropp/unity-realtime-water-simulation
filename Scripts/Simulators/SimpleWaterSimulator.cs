@@ -34,9 +34,9 @@ public class SimpleWaterSimulator : IWaterSimulator {
 
         _simulationComputeShader.SetFloat("Gravity", 9.81f);
 
-        Assert.IsTrue(resolution.x % WaterSimulator.KERNEL_SIZE == 0);
-        Assert.IsTrue(resolution.y % WaterSimulator.KERNEL_SIZE == 0);
-        _dispatchGroupSize = new Vector3Int(resolution.x / WaterSimulator.KERNEL_SIZE, resolution.y / WaterSimulator.KERNEL_SIZE, 1);
+        Assert.IsTrue(resolution.x % Simulator.KERNEL_SIZE == 0);
+        Assert.IsTrue(resolution.y % Simulator.KERNEL_SIZE == 0);
+        _dispatchGroupSize = new Vector3Int(resolution.x / Simulator.KERNEL_SIZE, resolution.y / Simulator.KERNEL_SIZE, 1);
 
         // Init kernel
         _simulationComputeShader.Dispatch(1, _dispatchGroupSize.x, _dispatchGroupSize.y, _dispatchGroupSize.z);

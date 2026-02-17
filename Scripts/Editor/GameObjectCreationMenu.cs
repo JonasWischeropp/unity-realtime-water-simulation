@@ -27,7 +27,7 @@ public class GameObjectCreationMenu {
 
     [MenuItem(PATH + "Simulator", priority = MENU_PRIORITY + 1)]
     static void CreateSimulator() {
-        GameObject go = SpawnGameObject("Simulator", typeof(WaterSimulator), typeof(WaterSimulatorSampler));
+        GameObject go = SpawnGameObject("Simulator", typeof(Simulator), typeof(Sampler));
         go.layer = LayerMask.NameToLayer("Water");
         var renderer = go.GetComponent<MeshRenderer>();
         renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -39,14 +39,14 @@ public class GameObjectCreationMenu {
 
     [MenuItem(PATH + "Manipulator", priority = MENU_PRIORITY + 2)]
     static void CreateManipulator() {
-        GameObject go = SpawnGameObject("Manipulator", typeof(WaterManipulator));
-        go.GetComponent<WaterManipulator>().SetSimulator(GetClosestOfType<WaterSimulator>());
+        GameObject go = SpawnGameObject("Manipulator", typeof(Manipulator));
+        go.GetComponent<Manipulator>().SetSimulator(GetClosestOfType<Simulator>());
     }
 
     [MenuItem(PATH + "Floater", priority = MENU_PRIORITY + 3)]
     static void CreateFloater() {
-        GameObject go = SpawnGameObject("Floater", typeof(WaterSimulationFloater));
-        go.GetComponent<WaterSimulationFloater>().SetSimulatorSampler(GetClosestOfType<WaterSimulatorSampler>());
+        GameObject go = SpawnGameObject("Floater", typeof(Floater));
+        go.GetComponent<Floater>().SetSimulatorSampler(GetClosestOfType<Sampler>());
     }
 
     static T GetClosestOfType<T>() where T : UnityEngine.Component {

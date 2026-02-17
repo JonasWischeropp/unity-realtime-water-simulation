@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace JonasWischeropp.Unity.WaterSimulation.Editor {
 
-[CustomEditor(typeof(WaterSimulator))]
-public class WaterSimulatorEditor : ScriptlessEditor {
+[CustomEditor(typeof(Simulator))]
+public class SimulatorEditor : ScriptlessEditor {
     BoxBoundsHandle _boxHandle = new BoxBoundsHandle();
     bool _editingBox = false;
     Tool _lastTool;
@@ -37,11 +37,11 @@ public class WaterSimulatorEditor : ScriptlessEditor {
         if (!_editingBox) {
             return;
         }
-        WaterSimulator simulator = (WaterSimulator)target;
+        Simulator simulator = (Simulator)target;
 
         _boxHandle.center = simulator.GetCenter();
         _boxHandle.size = simulator.GetSize();
-        _boxHandle.SetColor(WaterSimulator.GIZMO_COLOR);
+        _boxHandle.SetColor(Simulator.GIZMO_COLOR);
 
         EditorGUI.BeginChangeCheck();
         _boxHandle.DrawHandle();

@@ -48,9 +48,9 @@ public class ComplexWaterSimulator : IWaterSimulator {
         _simulationComputeShader.SetFloat("FoamSteepMul", 0.03f);
         _simulationComputeShader.SetFloat("FoamVanishing", 1f);
 
-        Assert.IsTrue(resolution.x % WaterSimulator.KERNEL_SIZE == 0);
-        Assert.IsTrue(resolution.y % WaterSimulator.KERNEL_SIZE == 0);
-        _dispatchGroupSize = new Vector3Int(resolution.x / WaterSimulator.KERNEL_SIZE, resolution.y / WaterSimulator.KERNEL_SIZE, 1);
+        Assert.IsTrue(resolution.x % Simulator.KERNEL_SIZE == 0);
+        Assert.IsTrue(resolution.y % Simulator.KERNEL_SIZE == 0);
+        _dispatchGroupSize = new Vector3Int(resolution.x / Simulator.KERNEL_SIZE, resolution.y / Simulator.KERNEL_SIZE, 1);
 
         // Init buffer
         _simulationComputeShader.Dispatch(2, _dispatchGroupSize.x, _dispatchGroupSize.y, _dispatchGroupSize.z);

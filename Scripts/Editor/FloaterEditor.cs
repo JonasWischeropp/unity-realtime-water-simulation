@@ -2,10 +2,10 @@ using UnityEngine;
 using UnityEditor;
 
 namespace JonasWischeropp.Unity.WaterSimulation.Editor {
-using static WaterSimulationFloater;
+using static Floater;
 
-[CustomEditor(typeof(WaterSimulationFloater))]
-public class WaterSimulationFloaterEditor : ScriptlessEditor {
+[CustomEditor(typeof(Floater))]
+public class FloaterEditor : ScriptlessEditor {
     private bool _editing = false;
     private Tool _lastTool;
 
@@ -13,9 +13,9 @@ public class WaterSimulationFloaterEditor : ScriptlessEditor {
         if (!_editing) {
             return;
         }
-        var t = (WaterSimulationFloater)target;
+        var t = (Floater)target;
 
-        foreach (Floater floater in t.GetFloaters()) {
+        foreach (FloaterPoint floater in t.GetFloaters()) {
             EditorGUI.BeginChangeCheck();
             Quaternion handleRotation = Tools.pivotRotation == PivotRotation.Local
                 ? t.transform.rotation

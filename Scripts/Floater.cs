@@ -6,14 +6,14 @@ using UnityEngine;
 
 namespace JonasWischeropp.Unity.WaterSimulation {
 
-using WaterPositionInfo = WaterSimulatorSampler.WaterPositionInfo;
+using PositionInfo = Sampler.PositionInfo;
 
-[AddComponentMenu("WaterSimulator/Floater")]
-[RequireComponent(typeof(Rigidbody))]
-[DefaultExecutionOrder(WaterSimulator.EXECUTION_ORDER + 2)]
-public class WaterSimulationFloater : MonoBehaviour {
+[AddComponentMenu(Simulator.SIM_MENU_GROUP + "Floater"),
+RequireComponent(typeof(Rigidbody))]
+[DefaultExecutionOrder(Simulator.EXECUTION_ORDER + 2)]
+public class Floater : MonoBehaviour {
     [Serializable]
-    public class Floater {
+    public class FloaterPoint {
         [SerializeField]
         public Vector3 Offset = Vector3.zero;
         [SerializeField]
@@ -21,10 +21,10 @@ public class WaterSimulationFloater : MonoBehaviour {
     }
 
     [SerializeField]
-    WaterSimulatorSampler _sampler;
+    Sampler _sampler;
 
     [SerializeField]
-    Floater[] _floaters = new Floater[]{new Floater()};
+    FloaterPoint[] _floaters = new FloaterPoint[]{new FloaterPoint()};
 
     [SerializeField]
     bool _positionPrediction = true;
@@ -46,8 +46,8 @@ public class WaterSimulationFloater : MonoBehaviour {
 
     Rigidbody _rigidbody;
 
-    Action<WaterPositionInfo>[] _callbacks;
-    WaterPositionInfo[] _infos;
+    Action<PositionInfo>[] _callbacks;
+    PositionInfo[] _infos;
 
     void Awake() {
         if (_sampler == null) {
@@ -57,8 +57,8 @@ public class WaterSimulationFloater : MonoBehaviour {
         }
 
         _rigidbody = GetComponent<Rigidbody>();
-        _callbacks = new Action<WaterPositionInfo>[_floaters.Length];
-        _infos = new WaterPositionInfo[_floaters.Length];
+        _callbacks = new Action<PositionInfo>[_floaters.Length];
+        _infos = new PositionInfo[_floaters.Length];
     }
 
     void OnEnable() {
@@ -79,8 +79,8 @@ public class WaterSimulationFloater : MonoBehaviour {
         float submergeTotal = 0f;
 
         for (int i = 0; i < _floaters.Length; i++) {
-            Floater floater = _floaters[i];
-            WaterPositionInfo info = _infos[i];
+            FloaterPoint floater = _floaters[i];
+            PositionInfo info = _infos[i];
 
             Vector3 currentPos = transform.TransformPoint(floater.Offset);
 
@@ -113,16 +113,16 @@ public class WaterSimulationFloater : MonoBehaviour {
         _rigidbody.angularDamping = Mathf.Lerp(_angularDamping, _underWaterAngularDamping, value);
     }
 
-    void OnWaterUpdate(int i, WaterPositionInfo info) {
+    void OnWaterUpdate(int i, PositionInfo info) {
         _infos[i] = info;
     }
 
-    public Floater[] GetFloaters() { // TODO internal?
+    public FloaterPoint[] GetFloaters() { // TODO internal?
         return _floaters;
     }
 
 #if UNITY_EDITOR
-    public void SetSimulatorSampler(WaterSimulatorSampler newSampler) {
+    public void SetSimulatorSampler(Sampler newSampler) {
         if (_sampler == newSampler) {
             return;
         }
@@ -137,7 +137,7 @@ public class WaterSimulationFloater : MonoBehaviour {
     }
 
     void OnDrawGizmosSelected() {
-        foreach (Floater floater in _floaters) {
+        foreach (FloaterPoint floater in _floaters) {
             Gizmos.DrawSphere(transform.TransformPoint(floater.Offset), 0.5f * floater.Size);
         }
         

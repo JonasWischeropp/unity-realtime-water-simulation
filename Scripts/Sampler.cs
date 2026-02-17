@@ -5,16 +5,17 @@ using UnityEngine.Rendering;
 
 namespace JonasWischeropp.Unity.WaterSimulation {
 
-[RequireComponent(typeof(WaterSimulator))]
-[DefaultExecutionOrder(WaterSimulator.EXECUTION_ORDER + 1)]
-public class WaterSimulatorSampler : MonoBehaviour, IDisposable {
+[AddComponentMenu(Simulator.SIM_MENU_GROUP + "Sampler"),
+RequireComponent(typeof(Simulator))]
+[DefaultExecutionOrder(Simulator.EXECUTION_ORDER + 1)]
+public class Sampler : MonoBehaviour, IDisposable {
     const int KERNEL_SIZE = 64;
     const int RESULT_BUFFER_STRIDE = 4 * 4;
     const int POINTS_BUFFER_STRIDE = 2 * 4;
     const int NEAREST_SAMPLE_KERNEL = 0;
     const int BILINEAR_SAMPLE_KERNEL = 1;
 
-    public struct WaterPositionInfo {
+    public struct PositionInfo {
         public readonly float Depth;
         public readonly Vector2 Velocity;
         public float GlobalGroundPos; // Writable because the returned local position is turned into a global one
@@ -27,11 +28,11 @@ public class WaterSimulatorSampler : MonoBehaviour, IDisposable {
     [SerializeField]
     SamplingMode _samplingMode = SamplingMode.Bilinear;
 
-    public WaterSimulator Simulator { get; private set; }
+    public Simulator Simulator { get; private set; }
 
     [SerializeField, HideInInspector]
     ComputeShader _sampleComputeShader;
-    PackedComputeBuffer<Action<WaterPositionInfo>, Vector2> _pointsBuffer;
+    PackedComputeBuffer<Action<PositionInfo>, Vector2> _pointsBuffer;
     ComputeBuffer _resultBuffer;
 
     public event Action OnBeforeCallback;
@@ -41,10 +42,10 @@ public class WaterSimulatorSampler : MonoBehaviour, IDisposable {
     SmoothedMeasurement _smoothedLatency = new SmoothedMeasurement(10);
 
     void Awake() {
-        Simulator = GetComponent<WaterSimulator>();
+        Simulator = GetComponent<Simulator>();
 
         _resultBuffer = new ComputeBuffer(KERNEL_SIZE, RESULT_BUFFER_STRIDE);
-        _pointsBuffer = new PackedComputeBuffer<Action<WaterPositionInfo>, Vector2>(KERNEL_SIZE, POINTS_BUFFER_STRIDE);
+        _pointsBuffer = new PackedComputeBuffer<Action<PositionInfo>, Vector2>(KERNEL_SIZE, POINTS_BUFFER_STRIDE);
         _pointsBuffer.OnResize += (int size) => {
             if (_resultBuffer.IsValid()) {
                 _resultBuffer.Dispose();
@@ -70,15 +71,15 @@ public class WaterSimulatorSampler : MonoBehaviour, IDisposable {
         Release();
     }
 
-    public void Subscribe(Action<WaterPositionInfo> callback, Vector3 position) {
+    public void Subscribe(Action<PositionInfo> callback, Vector3 position) {
         _pointsBuffer.Add(callback, ConvertToBufferPositionValue(position));
     }
 
-    public void UpdatePosition(Action<WaterPositionInfo> callback, Vector3 position) {
+    public void UpdatePosition(Action<PositionInfo> callback, Vector3 position) {
         _pointsBuffer.SetValue(callback, ConvertToBufferPositionValue(position));
     }
     
-    public void Unsubscribe(Action<WaterPositionInfo> callback) {
+    public void Unsubscribe(Action<PositionInfo> callback) {
         _pointsBuffer.Remove(callback);
     }
 
@@ -111,7 +112,7 @@ public class WaterSimulatorSampler : MonoBehaviour, IDisposable {
         BindBuffer(ShaderIDs.Data, Simulator.GetSimulationData());
 
         float timeOfRequest = Time.time;
-        Action<WaterPositionInfo>[] currentMapping
+        Action<PositionInfo>[] currentMapping
             = _pointsBuffer.Select((e, i) => e.Item1).ToArray();
 
         _sampleComputeShader.Dispatch(GetActiveKernel(), (_pointsBuffer.Count + KERNEL_SIZE - 1) / KERNEL_SIZE, 1, 1);
@@ -125,9 +126,9 @@ public class WaterSimulatorSampler : MonoBehaviour, IDisposable {
             _smoothedLatency.AddMeasurement(Latency);
 
             OnBeforeCallback?.Invoke();
-            var positionInfos = request.GetData<WaterPositionInfo>();
+            var positionInfos = request.GetData<PositionInfo>();
             for (int i = 0; i < currentMapping.Length; i++) {
-                WaterPositionInfo posInfo = positionInfos[i];
+                PositionInfo posInfo = positionInfos[i];
                 // Assuming that rotations are not allowed around the x- and z-axis
                 posInfo.GlobalGroundPos += Simulator.GetCenter().y - 0.5f * Simulator.GetSize().y;
                 currentMapping[i].Invoke(posInfo);

@@ -5,10 +5,10 @@ using UnityEngine;
 
 namespace JonasWischeropp.Unity.WaterSimulation {
 
-[AddComponentMenu("WaterSimulator/Water Manipulator")]
-[DefaultExecutionOrder(WaterSimulator.EXECUTION_ORDER + 1)]
-public class WaterManipulator : MonoBehaviour {
-    [SerializeField] WaterSimulator _simulator;
+[AddComponentMenu(Simulator.SIM_MENU_GROUP + "Manipulator")]
+[DefaultExecutionOrder(Simulator.EXECUTION_ORDER + 1)]
+public class Manipulator : MonoBehaviour {
+    [SerializeField] Simulator _simulator;
 
     bool IsUniformScale(Vector3 scale) {
         return scale.x == scale.y && scale.y == scale.z;
@@ -52,7 +52,7 @@ public class WaterManipulator : MonoBehaviour {
     }
 
 #if UNITY_EDITOR
-    public void SetSimulator(WaterSimulator newSimulator) {
+    public void SetSimulator(Simulator newSimulator) {
         if (newSimulator == _simulator) {
             return;
         }
