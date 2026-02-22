@@ -243,14 +243,15 @@ public class Simulator : MonoBehaviour {
 
     void Awake() {
         if (!SystemInfo.supportsComputeShaders) {
-            Debug.LogError("Compute shaders are not supported");
+            Debug.LogError("Compute shaders are not supported", this);
             enabled = false;
             return;
         }
 #if UNITY_EDITOR
-        if ((gameObject.layer & _groundLayer) != 0) {
-            Debug.LogError($"The layer of the simulator ({LayerMask.LayerToName(gameObject.layer)}) should not be included in the LayerMask \"{ObjectNames.NicifyVariableName(nameof(_groundLayer))}\"");
+        if (IsLayerConflicting(gameObject.layer)) {
+            Debug.LogError($"The layer of the simulator ({LayerMask.LayerToName(gameObject.layer)}) should not be included in the LayerMask \"{ObjectNames.NicifyVariableName(nameof(_groundLayer))}\"", this);
             enabled = false;
+            return;
         }
 #endif
 
@@ -355,6 +356,10 @@ public class Simulator : MonoBehaviour {
         _groundDepthCamera.orthographicSize = 0.5f * dimZ;
         _groundDepthCamera.aspect = dimX / dimZ;
         _groundDepthCamera.farClipPlane = _size.y;
+    }
+
+    public bool IsLayerConflicting(int layer) {
+        return (layer & _groundLayer) != 0;
     }
     
     public static Mesh CreateMesh(Vector2Int resolution, Vector3 scale) {

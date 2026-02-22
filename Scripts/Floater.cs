@@ -58,6 +58,12 @@ public class Floater : MonoBehaviour {
             return;
         }
 
+        if (_sampler.Simulator.IsLayerConflicting(gameObject.layer)) {
+            Debug.LogError("The Floater should not be on a layer that is used by the Simulator GroundLayer", this);
+            enabled = false;
+            return;
+        }
+
         _rigidbody = GetComponent<Rigidbody>();
         _callbacks = new Action<PositionInfo>[_floaters.Length];
         _infos = new PositionInfo[_floaters.Length];

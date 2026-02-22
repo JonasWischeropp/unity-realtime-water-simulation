@@ -1303,7 +1303,7 @@ GameObject:
   - component: {fileID: 439923011}
   - component: {fileID: 439923010}
   - component: {fileID: 439923009}
-  m_Layer: 6
+  m_Layer: 4
   m_Name: 'Water Floater: Ball'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2004,7 +2004,7 @@ GameObject:
   - component: {fileID: 614812586}
   - component: {fileID: 614812585}
   - component: {fileID: 614812584}
-  m_Layer: 6
+  m_Layer: 4
   m_Name: Sphere
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2365,7 +2365,7 @@ GameObject:
   - component: {fileID: 705542385}
   - component: {fileID: 705542384}
   - component: {fileID: 705542383}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: HumanReference
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3057,7 +3057,7 @@ GameObject:
   - component: {fileID: 784648065}
   - component: {fileID: 784648064}
   - component: {fileID: 784648063}
-  m_Layer: 6
+  m_Layer: 4
   m_Name: 'Water Floater: Board'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7115,7 +7115,7 @@ GameObject:
   - component: {fileID: 2096811481}
   - component: {fileID: 2096811480}
   - component: {fileID: 2096811479}
-  m_Layer: 6
+  m_Layer: 4
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
