@@ -67,8 +67,6 @@ public class Simulator : MonoBehaviour {
 
     [SerializeField]
     int _updatesPerFixedUpdate = 2;
-    [SerializeField]
-    float _shaderTimeStep = 0.02f;
     bool _simulate = false;
 
     MaterialPropertyBlock _materialPropertyBlock;
@@ -100,12 +98,8 @@ public class Simulator : MonoBehaviour {
         }
 
         for (int i = 0; i < _updatesPerFixedUpdate; i++) {
-            Dispatch();
+            _waterSimulator.Dispatch(Time.fixedDeltaTime / _updatesPerFixedUpdate);
         }
-    }
-
-    void Dispatch() {
-        _waterSimulator.Dispatch(_shaderTimeStep);
     }
 
     void InitVertexAdjuster() {
