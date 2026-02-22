@@ -33,6 +33,8 @@ public class Floater : MonoBehaviour {
     [Tooltip("With a value greater 1 it will float and with a value smaller 1 it will sink")]
     [SerializeField]
     float _buoyancyAmount = 3f; // TODO maybe use density instead?
+    [SerializeField]
+    float _accelerationSpeed = 6f;
     [Header("Regular Damping")]
     [SerializeField] 
     float _linearDamping = 0f;
@@ -91,9 +93,12 @@ public class Floater : MonoBehaviour {
                 submergeTotal += submergeAmount;
                 if (submergeAmount != 0.0) {
                     // TODO currently the rotation of simulator is not considered (probably also in manipulator)
-                    Vector3 velocityForce = new Vector3(info.Velocity.x, 0f, info.Velocity.y) * _rigidbody.mass;
-                    Vector3 buoyancyForce = new Vector3(0f, _sampler.Simulator.Gravity * _buoyancyAmount, 0f);
-                    _rigidbody.AddForceAtPosition((velocityForce + buoyancyForce) * submergeAmount / _floaters.Length, currentPos, ForceMode.Acceleration);
+                    Vector3 velocity = new Vector3(info.Velocity.x, 0f, info.Velocity.y);
+                    Vector3 requiredVelocity = velocity - _rigidbody.linearVelocity;
+                    Vector3 buoyancy = new Vector3(0f, _sampler.Simulator.Gravity * _buoyancyAmount, 0f);
+
+                    Vector3 force = (requiredVelocity * _accelerationSpeed + buoyancy) * submergeAmount / _floaters.Length;
+                    _rigidbody.AddForceAtPosition(force, currentPos, ForceMode.Force);
                 }
             }
 

@@ -1327,7 +1327,8 @@ MonoBehaviour:
   - Offset: {x: 0, y: 0, z: 0}
     Size: 1
   _positionPrediction: 1
-  _buoyancyAmount: 3
+  _buoyancyAmount: 2.3
+  _accelerationSpeed: 6
   _linearDamping: 0
   _angularDamping: 0.05
   _underWaterLinearDamping: 4
@@ -1368,7 +1369,7 @@ Transform:
   m_GameObject: {fileID: 439923008}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -6.09, y: 34.93, z: 48.8}
+  m_LocalPosition: {x: -6.09, y: 39.66, z: 48.8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -3086,11 +3087,12 @@ MonoBehaviour:
   - Offset: {x: 1.4, y: 0, z: -0.4}
     Size: 0.3
   _positionPrediction: 1
-  _buoyancyAmount: 1.5
+  _buoyancyAmount: 2
+  _accelerationSpeed: 6
   _linearDamping: 0
   _angularDamping: 0.05
   _underWaterLinearDamping: 4
-  _underWaterAngularDamping: 2
+  _underWaterAngularDamping: 8
 --- !u!54 &784648064
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3127,7 +3129,7 @@ Transform:
   m_GameObject: {fileID: 784648062}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -3.32, y: 33.25, z: 53.35}
+  m_LocalPosition: {x: -3.32, y: 41.32, z: 53.35}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -6558,7 +6560,6 @@ MonoBehaviour:
   _postProcessMesh: 1
   _useSimple: 0
   _updatesPerFixedUpdate: 2
-  _shaderTimeStep: 0.01
 --- !u!33 &1895275426
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -6644,6 +6645,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WaterSimulatorSampler
   _samplingMode: 1
+  _updateMode: 1
   _sampleComputeShader: {fileID: 7200000, guid: c95842e5a1fc912e690e03ff81ad33aa, type: 3}
 --- !u!1001 &1904622758
 PrefabInstance:
