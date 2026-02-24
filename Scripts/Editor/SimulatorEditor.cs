@@ -52,7 +52,6 @@ public class SimulatorEditor : ScriptlessEditor {
                 }
             }
         }
-        // TODO deactivate the right fields while playing
         base.OnInspectorGUI();
     }
     

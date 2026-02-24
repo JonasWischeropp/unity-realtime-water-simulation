@@ -20,7 +20,7 @@ public class Floater : MonoBehaviour {
         public float Size = 1f;
     }
 
-    [SerializeField]
+    [SerializeField, NoPlayModeEdit]
     Sampler _sampler;
 
     [SerializeField]

@@ -20,10 +20,10 @@ public class Simulator : MonoBehaviour {
     public readonly static Color GIZMO_COLOR = Color.green;
     public const int KERNEL_SIZE = 8;
 
-    [SerializeField]
+    [SerializeField, NoPlayModeEdit]
     Vector3 _size = Vector3.one * 10f;
 
-    [SerializeField, Step(KERNEL_SIZE, 2)]
+    [SerializeField, NoPlayModeEdit, Step(KERNEL_SIZE, 2)]
     Vector2Int _resolution = Vector2Int.one * 64;
     [SerializeField]
     LayerMask _groundLayer = 1; // Default layer
@@ -62,7 +62,7 @@ public class Simulator : MonoBehaviour {
     bool _postProcessMesh = true;
 
     IWaterSimulator _waterSimulator;
-    [SerializeField]
+    [SerializeField, NoPlayModeEdit]
     bool _useSimple = false;
 
     [SerializeField]
