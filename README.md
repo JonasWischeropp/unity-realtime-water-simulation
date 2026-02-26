@@ -4,7 +4,9 @@ This Unity package implements an iterative shallow water equation solver to simu
 > [!IMPORTANT]
 > WIP: Parts of the simulation and API might not be fully stable yet!
 
-TODO: Insert demo video here
+<p align="center">
+<video src="https://youtu.be/hGyOcgGslcU" controls></video>
+</p>
 
 ## Usage
 The package provides three main components:
