@@ -40,7 +40,9 @@ public class GameObjectCreationMenu {
     [MenuItem(PATH + "Manipulator", priority = MENU_PRIORITY + 2)]
     static void CreateManipulator() {
         GameObject go = SpawnGameObject("Manipulator", typeof(Manipulator));
-        go.GetComponent<Manipulator>().SetSimulator(GetClosestOfType<Simulator>());
+        Manipulator manipulator = go.GetComponent<Manipulator>();
+        manipulator.SetSimulator(GetClosestOfType<Simulator>());
+        manipulator.enabled = true;
     }
 
     [MenuItem(PATH + "Floater", priority = MENU_PRIORITY + 3)]

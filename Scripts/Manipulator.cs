@@ -15,13 +15,6 @@ public class Manipulator : MonoBehaviour {
         return scale.x == scale.y && scale.y == scale.z;
     }
 
-    void Awake() {
-        if (_simulator == null) {
-            Debug.LogError("Simulator is not assigned", this);
-            enabled = false;
-        }
-    }
-
     void Update() {
 #if UNITY_EDITOR
         if (!IsUniformScale(transform.localScale)) {
@@ -36,7 +29,17 @@ public class Manipulator : MonoBehaviour {
         }
     }
 
+    void Awake() {
+        enabled = _simulator != null;
+    }
+
     void OnEnable() {
+        if (_simulator == null) {
+            Debug.LogError("Simulator is not assigned", this);
+            enabled = false;
+            return;
+        }
+
         _simulator?.AddManipulator(this, GetPosition(), GetSize());
     }
 
