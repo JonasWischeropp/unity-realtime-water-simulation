@@ -5,5 +5,12 @@
     "description": "A realtime water simulator using shallow water equations.",
     "author": {
         "name": "Jonas Wischeropp"
-    }
+    },
+    "samples": [
+        {
+            "displayName": "Sample Scene",
+            "description": "Rocks sample scene",
+            "path": "Samples~/RockScene"
+        }
+    ]
 }
