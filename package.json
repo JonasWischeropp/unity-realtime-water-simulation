@@ -9,7 +9,7 @@
     "samples": [
         {
             "displayName": "Sample Scene",
-            "description": "Rocks sample scene",
+            "description": "This sample scene uses assets from the free pack 'Rock and Boulders 2' by Manufactura K4 (https://assetstore.unity.com/packages/3d/props/exterior/rock-and-boulders-2-6947)",
             "path": "Samples~/RockScene"
         }
     ]
