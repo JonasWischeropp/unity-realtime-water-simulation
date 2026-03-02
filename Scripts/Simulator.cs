@@ -62,8 +62,8 @@ public class Simulator : MonoBehaviour {
     bool _postProcessMesh = true;
 
     IWaterSimulator _waterSimulator;
-    [SerializeField, NoPlayModeEdit]
-    bool _useSimple = false;
+    [SerializeField, HideInInspector, NoPlayModeEdit]
+    bool _useSimple = false; // simple deactivated for now (because not working)
 
     [SerializeField]
     int _updatesPerFixedUpdate = 2;
