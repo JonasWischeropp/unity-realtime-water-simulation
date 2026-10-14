@@ -7156,7 +7156,7 @@ GameObject:
   - component: {fileID: 1895275425}
   - component: {fileID: 1895275429}
   m_Layer: 4
-  m_Name: Water Simualtor
+  m_Name: Water Simulator
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
