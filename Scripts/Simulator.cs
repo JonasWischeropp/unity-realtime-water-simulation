@@ -67,6 +67,10 @@ public class Simulator : MonoBehaviour {
 
     [SerializeField]
     int _updatesPerFixedUpdate = 2;
+
+    [SerializeField, Tooltip("Disabling this option is more performant but requires deliberate call of UpdateGround() to inform the Simulator about changes.")]
+    bool _autoUpdateGround = true;
+
     bool _simulate = false;
 
     MaterialPropertyBlock _materialPropertyBlock;
@@ -291,6 +295,12 @@ public class Simulator : MonoBehaviour {
         StartCoroutine(EnableSimulationNextFrame());
     }
 
+    void Start() {
+        if (!_autoUpdateGround) {
+            UpdateGround();
+        }
+    }
+
     void OnDestroy() {
         _groundDepthTexture.Release();
         _groundDepthCamera.targetTexture = null;
@@ -335,6 +345,8 @@ public class Simulator : MonoBehaviour {
         // TODO what if HDRP or build-in is used?
         cameraData.renderPostProcessing = false;
         cameraData.renderShadows = false;
+
+        _groundDepthCamera.enabled = _autoUpdateGround;
     }
     
     void SetupGroundDepthTexture() {
@@ -408,6 +420,19 @@ public class Simulator : MonoBehaviour {
         return mesh;
     }
 
+    void SetAutoUpdateGround(bool active) {
+        _autoUpdateGround = active;
+        _groundDepthCamera.enabled = active;
+    }
+
+    bool GetAutoUpdateGround() {
+        return _autoUpdateGround;
+    }
+
+    void UpdateGround() {
+        _groundDepthCamera.Render();
+    }
+
 #if UNITY_EDITOR
     void SetHideComponents(bool hide) {
         _hideCustomComponents = hide;
@@ -423,6 +448,13 @@ public class Simulator : MonoBehaviour {
         SetHideComponents(!_hideCustomComponents);
     }
 
+    [ContextMenu("Update Ground")]
+    void UpdateGroundMenu() {
+        if (_groundDepthCamera) {
+            UpdateGround();
+        }
+    }
+
     void OnDrawGizmosSelected() {
         Gizmos.color = GIZMO_COLOR;
         Gizmos.DrawWireCube(GetCenter(), GetSize());
@@ -433,6 +465,7 @@ public class Simulator : MonoBehaviour {
 
         if (_groundDepthCamera) {
             _groundDepthCamera.cullingMask = _groundLayer;
+            _groundDepthCamera.enabled = _autoUpdateGround;
         }
     }
 #endif
